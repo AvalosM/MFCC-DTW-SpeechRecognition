@@ -9,8 +9,6 @@ typedef struct __attribute__((packed)) fcomplex
     float imag;
 } fcomplex;
 
-extern fcomplex cmul_pair_asm(fcomplex *x, fcomplex *y);
-
 fcomplex fcmul(fcomplex x, fcomplex y);
 
 fcomplex fcsum(fcomplex x, fcomplex y);
