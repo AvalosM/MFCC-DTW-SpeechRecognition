@@ -24,12 +24,12 @@ TEST_OBJS := $(TEST_SRCS:./src/testing/%.c=./build/testing/%.c.o)
 
 #----------------TARGET LINK----------------#
 $(TARGET): $(OBJS) $(BUILD_DIR)/main.c.o msg_linking
-	$(CC) $(CFLAGS) $(OBJS) $(BUILD_DIR)/main.c.o $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(OBJS) $(BUILD_DIR)/main.c.o -no-pie $(LIBS) -o $@
 
 #----------------TEST LINK----------------#
 # Link
 $(TEST): $(TEST_OBJS) $(OBJS) msg_linking
-	$(CC) $(CFLAGS) $(TEST_OBJS) $(OBJS) $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(TEST_OBJS) $(OBJS) $(LIBS) -no-pie -o $@
 
 # Compile C
 $(BUILD_DIR)/%.c.o: $(SRC_DIR)/%.c msg_compiling
@@ -48,6 +48,7 @@ $(BUILD_DIR)/%.asm.o: $(SRC_DIR)/%.asm
 all: $(TARGET)
 
 test: CFLAGS += -g
+test: ASFLAGS += -g
 
 # Debug compile target
 debug: CFLAGS += -g
