@@ -7,8 +7,8 @@
 
 
 #define PI 3.14159265358979323846
-#define FFT_POINT_MAX 2048
 #define TWIDDLE_TABLE_SIZE 1024
+#define __SSE_ASM__
 
 /**
  * @brief Init twiddle factor table
@@ -31,5 +31,9 @@ void twiddle_init();
  * @param N Signal length 
  */
 void fftstockham(fcomplex *x, fcomplex *y, unsigned int N);
+
+extern void fftstockham_asm(fcomplex *x, fcomplex *y, unsigned int N);
+
+void fft(fcomplex *x, fcomplex *y, unsigned int N);
 
 #endif /* __TRANSFORMS_H__ */

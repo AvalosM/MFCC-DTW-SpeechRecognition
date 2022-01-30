@@ -2,7 +2,7 @@
 #include "../transforms.h"
 #include "../io.h"
 
-extern void fftstockham(fcomplex *x, fcomplex *y, unsigned int N);
+// extern void fft(fcomplex *x, fcomplex *y, unsigned int N);
 
 
 void fft_allzero()
@@ -14,7 +14,7 @@ void fft_allzero()
     fcomplex *signal    = (fcomplex*)calloc(len, sizeof(fcomplex));
     fcomplex *workspace = (fcomplex*)calloc(len, sizeof(fcomplex));
 
-    fftstockham(signal, workspace, len);
+    fft(signal, workspace, len);
 
     for (unsigned int i = 0; i < len; i++) {
         ASSERT_EQ(signal[i].real, 0);
@@ -53,10 +53,9 @@ void fft_linearity()
 
     fcomplex *workspace = (fcomplex*)calloc(len, sizeof(fcomplex));
 
-    fftstockham(y, workspace, len); /* FFT(a1 x1[n] + a2 x2[n]) */
-
-    fftstockham(x1, workspace, len);
-    fftstockham(x2, workspace, len);
+    fft(y, workspace, len); /* FFT(a1 x1[n] + a2 x2[n]) */
+    fft(x1, workspace, len);
+    fft(x2, workspace, len);
     for (unsigned int i = 0; i < len; i++) {
         x1[i] = fcsum(fcmul(a1, x1[i]), fcmul(a2, x2[i])); /* a1 FFT(x1[n]) + a2 FFT(x2[n]) */
     }
@@ -77,9 +76,10 @@ void fft_linearity()
 
 void fft_sinewave()
 {
+    twiddle_init();
     testinit("fft_sinewave");
 
-    unsigned int len = 2048;
+    unsigned int len = 16;
     unsigned int samplerate = len;
     fcomplex *sinewave  = malloc(len * sizeof(fcomplex));
     fcomplex *workspace = malloc(len * sizeof(fcomplex));
@@ -90,7 +90,7 @@ void fft_sinewave()
     }
     savesignalc(TEST_RES_DIR("fft_sinewave.csv"), sinewave, len);
 
-    fftstockham(sinewave, workspace, len);
+    fft(sinewave, workspace, len);
     savesignalc(TEST_RES_DIR("fft_fftsinewave.csv"), sinewave, len);
 
     /* Bin corresponding with periodogram peak should be found at 4hz(4th bin) */
@@ -122,7 +122,7 @@ void fft_wavesum()
     }
     savesignalc(TEST_RES_DIR("fft_wavesum.csv"), signal, len);
 
-    fftstockham(signal, workspace, len);
+    fft(signal, workspace, len);
     savesignalc(TEST_RES_DIR("fft_fftwavesum.csv"), signal, len);
 
     /* Bin corresponding with periodogram peaks should be found at 4hz(4th bin) and 8hz(8th bin)*/
