@@ -7,7 +7,6 @@
 
 void fft_allzero()
 {
-    twiddle_init();
     testinit("fft_allzero");
 
     unsigned int len = 16;
@@ -76,10 +75,9 @@ void fft_linearity()
 
 void fft_sinewave()
 {
-    twiddle_init();
     testinit("fft_sinewave");
 
-    unsigned int len = 16;
+    unsigned int len = 128;
     unsigned int samplerate = len;
     fcomplex *sinewave  = malloc(len * sizeof(fcomplex));
     fcomplex *workspace = malloc(len * sizeof(fcomplex));
@@ -111,7 +109,7 @@ void fft_wavesum()
 {
     testinit("fft_wavesum");
 
-    unsigned int len = 64;
+    unsigned int len = 128;
     unsigned int samplerate = len;
     fcomplex *signal = (fcomplex*)calloc(len, sizeof(fcomplex));
     fcomplex *workspace = malloc(len * sizeof(fcomplex));
@@ -152,6 +150,7 @@ void fft_wavesum()
 void fft_testsuite()
 {
     suiteinit("FFT");
+    twiddle_init();
     fft_allzero();
     fft_linearity();
     fft_sinewave();

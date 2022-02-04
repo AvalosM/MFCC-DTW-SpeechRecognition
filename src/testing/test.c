@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "test.h"
-#include "suites.h"
 
 void assertfail(char *file, int line)
 {
