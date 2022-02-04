@@ -3,8 +3,10 @@ extern twiddle
 %define TWIDDLE_SIZE 1024
 %define FCOMPLEX_LENGTH 8
 %define FCOMPLEX_ITEM_OFFSET 4
+
 section .text
 global fftstockham_asm
+
 
 ; Multiply two pairs of complex numbers
 ; float complex cmul_pair(fcomplex x(xmm0), fcomplex y(xmm1))
@@ -36,10 +38,8 @@ cmul_pair:
 
     ret
 
-
 ; void stockhamfft_asm(complex *x(rdi), complex *y(rsi), unsigned int N(rdx))             
 fftstockham_asm:
-
     ; ----------------
     ; ----Prologue----
     ; ----------------
@@ -95,11 +95,62 @@ fftstockham_asm:
 
     %define w xmm5
     ; xmm3 = | twiddle[rax] | twiddle[rax] |
-    movlps w, [twiddle + rax]
-    movhps w, [twiddle + rax]
-
+    movlps w, QWORD [twiddle + rax]
+    movhps w, QWORD [twiddle + rax]
+   
     %define k r15
     mov k, 0
+
+    ; if (r == 1) there are only two pairs to multiply
+    cmp r, 1
+    jne .kloop
+
+    ; rax = (j * rs + k + r) * sizeof(fcomplex) = (j * 2 + 1) * sizeof(fcomplex)
+    mov rax, j
+    shl rax, 1
+    inc rax
+    ; mov rbx, FCOMPLEX_LENGTH
+    mul rbx
+
+    %define t xmm0
+    ; xmm0 = | ... | y[rax] |
+    movlps t, QWORD [y + rax]
+
+    movaps xmm1, w
+    ; xmm0 = | ... | w * y[rax] |
+    call cmul_pair
+
+    ; rax = (j * rs + k) * sizeof(fcomplex) = (j * 2) * sizeof(fcomplex)
+    sub rax, FCOMPLEX_LENGTH
+
+    ; xmm2 = | ... | y[rax] |
+    movlps xmm2, QWORD [y + rax]
+
+    ; xmm1 = | ... | y[rax] + t |
+    movaps xmm1, xmm2
+    addps xmm1, t
+
+    ; rax = (j * r + k) * sizeof(fcomplex) = j * sizeof(fcomplex)
+    shr rax, 1
+
+    ; x[rax] = y[rax] + t
+    movlps QWORD [x + rax], xmm1
+
+    ; xmm1 = | y[rax + 1] - t | y[rax] - t |
+    movaps xmm1, xmm2
+    subps xmm1, t
+
+    ; rax = ((j + Ls) * r + k) * sizeof(fcomplex) = (j + Ls) * sizeof(fcomplex)
+    mov rax, j
+    add rax, Ls
+    ; mov rbx, FCOMPLEX_LENGTH
+    mul rbx
+    
+    ; x[rax] = y[rax] - t
+    movlps QWORD [x + rax], xmm1
+
+    jmp .kend
+
     .kloop: ; for (k = 0; k < r; k+=2)
 
     ; rax = (j * rs + k + r) * sizeof(fcomplex)
@@ -110,10 +161,8 @@ fftstockham_asm:
     ; mov rbx, FCOMPLEX_LENGTH
     mul rbx
 
-    %define t xmm0
     ; xmm0 = | y[rax + 1] | y[rax] |
-    movlps t, [y + rax]
-    movhps t, [y + rax + FCOMPLEX_LENGTH]
+    movups t, OWORD [y + rax]
     
     movaps xmm1, w
     ; xmm0 = |w * y[rax + 1] | w * y[rax] |
@@ -127,13 +176,13 @@ fftstockham_asm:
     mul rbx
 
     ; xmm2 = | y[rax + 1] | y[rax] |
-    movups xmm2, [y + rax]
+    movups xmm2, OWORD [y + rax]
 
     ; xmm1 = | y[rax + 1] + t | y[rax] + t |
-    movups xmm1, xmm2
+    movaps xmm1, xmm2
     addps xmm1, t
 
-    ; rax = (j * r + k)
+    ; rax = (j * r + k) * sizeof(fcomplex)
     mov rax, j
     mul r
     add rax, k
@@ -142,7 +191,7 @@ fftstockham_asm:
 
     ; x[rax] = y[rax] + t
     ; x[rax + 1] = y[rax + 1] + t
-    movups [x + rax], xmm1
+    movups OWORD [x + rax], xmm1
     
     ; xmm1 = | y[rax + 1] - t | y[rax] - t |
     movaps xmm1, xmm2
@@ -157,12 +206,13 @@ fftstockham_asm:
     
     ; x[rax] = y[rax] - t
     ; x[rax + 1] = y[rax + 1] - t
-    movups[x + rax], xmm1
+    movups OWORD [x + rax], xmm1
 
-    inc k
+    add k, 2
     cmp k, r
     jl .kloop
 
+    .kend:
     inc j
     cmp j, Ls
     jl .jloop
@@ -170,12 +220,28 @@ fftstockham_asm:
     shl L, 1
     cmp L, N
     jle .Lloop
-    jmp .end
     
-    .end:
+    ; If log_2(N) is odd, result values are stored on additional workspace y
+    cmp y_ini, y
+    je .end
+
+    ; for (unsigned int i = 0; i < N; i++)
+    mov rcx, 0
+    .iloop:
+    cmp rcx, N
+    je .end
+
+    mov rax, QWORD [x + rcx * FCOMPLEX_LENGTH]
+    mov QWORD[y + rcx * FCOMPLEX_LENGTH], rax
+
+    inc rcx
+    jmp .iloop
+
+
     ; ----------------
     ; ----Epilogue----
     ; ----------------
+    .end:
     pop rbx
     pop r12
     pop r13
