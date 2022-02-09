@@ -1,44 +1,13 @@
 section .data
 extern twiddle
+extern cmul_pair
 %define TWIDDLE_SIZE 1024
 %define FCOMPLEX_LENGTH 8
-%define FCOMPLEX_ITEM_OFFSET 4
 
 section .text
 global fftstockham_asm
 
-
-; Multiply two pairs of complex numbers
-; float complex cmul_pair(fcomplex x(xmm0), fcomplex y(xmm1))
-; Reference: 
-cmul_pair:
-    ;        127                             0
-    ; xmm2 = | y1.re | y1.re | y0.re | y0.re |
-    movsldup xmm2, xmm0
-
-    ; xmm3 = | x1.im | x1.re | x0.im | x0.re |
-    ; movaps xmm3, xmm1
-
-    ; xmm2 = | x1.im * y1.re | x1.re * y1.re | x0.im * y0.re | x0.re * y0.re |
-    mulps xmm2, xmm1
-
-    ; xmm0 = | x1.re | x1.im | x0.re | x0.im |
-    shufps xmm1, xmm1, 0xb1
-
-    ; xmm3 = | y1.im | y1.im | y0.im | y0.im |
-    movshdup xmm3, xmm0
-
-    ; xmm3 = | x1.im * y1.im | x1.re * y1.im | x0.im * y0.im | x0.re * y0.im |
-    mulps xmm3, xmm1
-
-    ; xmm2 = | x1 * y1 | x0 * y0 |
-    addsubps xmm2, xmm3
-
-    movaps xmm0, xmm2 
-
-    ret
-
-; void stockhamfft_asm(complex *x(rdi), complex *y(rsi), unsigned int N(rdx))             
+; void stockhamfft_asm(fcomplex *x(rdi), fcomplex *y(rsi), unsigned int N(rdx))             
 fftstockham_asm:
     ; ----------------
     ; ----Prologue----
@@ -64,8 +33,7 @@ fftstockham_asm:
     mov L, 2
     .Lloop: ; for (L = 2; L <= N; L <<= 1)
 
-    ; Swap pointers
-    xchg x, y
+    xchg x, y ; Swap pointers
     
     %define Ls r11
     mov Ls, L
@@ -86,128 +54,91 @@ fftstockham_asm:
     mov j, 0
     .jloop: ; for (j = 0; j < Ls; j++)
 
-    ; rax = (j * TWIDDLE_SIZE / LS) * sizeof(fcomplex)
     mov rax, TWIDDLE_SIZE
     mul j
     div Ls
-    mov rbx, FCOMPLEX_LENGTH
-    mul rbx
+    shl rax, 3 ; rax = (j * TWIDDLE_SIZE / LS) * sizeof(fcomplex)
 
     %define w xmm5
-    ; xmm3 = | twiddle[rax] | twiddle[rax] |
     movlps w, QWORD [twiddle + rax]
-    movhps w, QWORD [twiddle + rax]
+    movhps w, QWORD [twiddle + rax]  ; xmm3 = | twiddle[rax] | twiddle[rax] |
    
     %define k r15
     mov k, 0
 
-    ; if (r == 1) there are only two pairs to multiply
-    cmp r, 1
+    cmp r, 1 ; if (r == 1) there is only one pair to multiply
     jne .kloop
 
-    ; rax = (j * rs + k + r) * sizeof(fcomplex) = (j * 2 + 1) * sizeof(fcomplex)
     mov rax, j
     shl rax, 1
     inc rax
-    ; mov rbx, FCOMPLEX_LENGTH
-    mul rbx
+    shl rax, 3 ; rax = (j * rs + k + r) * sizeof(fcomplex) = (j * 2 + 1) * sizeof(fcomplex)
 
-    %define t xmm0
-    ; xmm0 = | ... | y[rax] |
-    movlps t, QWORD [y + rax]
+    %define t xmm0   
+    movlps t, QWORD [y + rax]  ; xmm0 = | ... | y[rax]     |
+    movaps xmm1, w             ; xmm1 = | ... | w          | 
+    call cmul_pair             ; xmm1 = | ... | w * y[rax] |
 
-    movaps xmm1, w
-    ; xmm0 = | ... | w * y[rax] |
-    call cmul_pair
+    sub rax, FCOMPLEX_LENGTH ; rax = (j * rs + k) * sizeof(fcomplex) = (j * 2) * sizeof(fcomplex)
 
-    ; rax = (j * rs + k) * sizeof(fcomplex) = (j * 2) * sizeof(fcomplex)
-    sub rax, FCOMPLEX_LENGTH
+    movlps xmm2, QWORD [y + rax] ; xmm2 = | ... | y[rax]     |
+    movaps xmm1, xmm2            ; xmm1 = | ... | y[rax]     |
+    addps xmm1, t                ; xmm1 = | ... | y[rax] + t |
 
-    ; xmm2 = | ... | y[rax] |
-    movlps xmm2, QWORD [y + rax]
+    shr rax, 1  ; rax* = (j * r + k) * sizeof(fcomplex) = j * sizeof(fcomplex)
 
-    ; xmm1 = | ... | y[rax] + t |
-    movaps xmm1, xmm2
-    addps xmm1, t
+    movlps QWORD [x + rax], xmm1 ; x[rax*] = y[rax] + t
 
-    ; rax = (j * r + k) * sizeof(fcomplex) = j * sizeof(fcomplex)
-    shr rax, 1
+    subps xmm2, t                ; xmm2 = | ... | y[rax] - t |
 
-    ; x[rax] = y[rax] + t
-    movlps QWORD [x + rax], xmm1
-
-    ; xmm1 = | y[rax + 1] - t | y[rax] - t |
-    movaps xmm1, xmm2
-    subps xmm1, t
-
-    ; rax = ((j + Ls) * r + k) * sizeof(fcomplex) = (j + Ls) * sizeof(fcomplex)
     mov rax, j
     add rax, Ls
-    ; mov rbx, FCOMPLEX_LENGTH
-    mul rbx
+    shl rax, 3  ; rax* = ((j + Ls) * r + k) * sizeof(fcomplex) = (j + Ls) * sizeof(fcomplex)
     
-    ; x[rax] = y[rax] - t
-    movlps QWORD [x + rax], xmm1
+    movlps QWORD [x + rax], xmm2 ; x[rax*] = y[rax] - t
 
     jmp .kend
 
     .kloop: ; for (k = 0; k < r; k+=2)
 
-    ; rax = (j * rs + k + r) * sizeof(fcomplex)
     mov rax, j
     mul rs
     add rax, k
     add rax, r
-    ; mov rbx, FCOMPLEX_LENGTH
-    mul rbx
+    shl rax, 3 ; rax = (j * rs + k + r) * sizeof(fcomplex)
 
-    ; xmm0 = | y[rax + 1] | y[rax] |
-    movups t, OWORD [y + rax]
-    
-    movaps xmm1, w
-    ; xmm0 = |w * y[rax + 1] | w * y[rax] |
-    call cmul_pair
+    movups t, OWORD [y + rax] ; xmm0 = | y[rax + 1]    | y[rax]     |  
+    movaps xmm1, w            ; xmm1 = | w             | w          | 
+    call cmul_pair            ; xmm0 = |w * y[rax + 1] | w * y[rax] |
 
-    ; rax = (j * rs + k) * sizeof(fcomplex)
     mov rax, j
     mul rs
     add rax, k
-    ; mov rbx, FCOMPLEX_LENGTH
-    mul rbx
+    shl rax, 3 ; rax = (j * rs + k) * sizeof(fcomplex)
 
-    ; xmm2 = | y[rax + 1] | y[rax] |
-    movups xmm2, OWORD [y + rax]
+    movups xmm2, OWORD [y + rax] ; xmm2 = | y[rax + 1]     | y[rax]     |
+    movaps xmm1, xmm2            ; xmm1 = | y[rax + 1]     | y[rax]     |
+    addps xmm1, t                ; xmm1 = | y[rax + 1] + t | y[rax] + t |
 
-    ; xmm1 = | y[rax + 1] + t | y[rax] + t |
-    movaps xmm1, xmm2
-    addps xmm1, t
-
-    ; rax = (j * r + k) * sizeof(fcomplex)
     mov rax, j
     mul r
     add rax, k
-    ; mov rbx, FCOMPLEX_LENGTH
-    mul rbx
+    shl rax, 3 ; rax* = (j * r + k) * sizeof(fcomplex)
 
-    ; x[rax] = y[rax] + t
-    ; x[rax + 1] = y[rax + 1] + t
-    movups OWORD [x + rax], xmm1
-    
-    ; xmm1 = | y[rax + 1] - t | y[rax] - t |
-    movaps xmm1, xmm2
-    subps xmm1, t
+    movups OWORD [x + rax], xmm1     ; x[rax*]     = y[rax] + t
+                                     ; x[rax* + 1] = y[rax + 1] + t
 
-    ; rax = ((j + Ls) * r + k) * sizeof(fcomplex)
+    subps xmm2, t ; xmm2 = | y[rax + 1] - t | y[rax] - t |
+
     mov rax, j
     add rax, Ls
     mul r
     add rax, k
-    mul rbx
+    shl rax, 3 ; rax* = ((j + Ls) * r + k) * sizeof(fcomplex)
     
-    ; x[rax] = y[rax] - t
-    ; x[rax + 1] = y[rax + 1] - t
-    movups OWORD [x + rax], xmm1
-
+    movups OWORD [x + rax], xmm2 ; x[rax*]     = y[rax] - t
+                                 ; x[rax* + 1] = y[rax + 1] - t
+                                 
     add k, 2
     cmp k, r
     jl .kloop
@@ -221,13 +152,11 @@ fftstockham_asm:
     cmp L, N
     jle .Lloop
     
-    ; If log_2(N) is odd, result values are stored on additional workspace y
-    cmp y_ini, y
+    cmp y_ini, y ; If log_2(N) is odd, result values are stored on additional workspace y
     je .end
 
-    ; for (unsigned int i = 0; i < N; i++)
     mov rcx, 0
-    .iloop:
+    .iloop: ; for (unsigned int i = 0; i < N; i++)
     cmp rcx, N
     je .end
 
@@ -236,7 +165,6 @@ fftstockham_asm:
 
     inc rcx
     jmp .iloop
-
 
     ; ----------------
     ; ----Epilogue----

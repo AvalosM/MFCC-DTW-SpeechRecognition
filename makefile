@@ -1,6 +1,6 @@
 TARGET := speechr
 TEST   := test
-BENCH  := benchmark
+BENCH  := bench
 
 CC	   := gcc
 CFLAGS := -Wall -Wextra -pedantic -Wshadow -Wdouble-promotion
@@ -25,7 +25,7 @@ BENCH_SRCS := $(shell find $(BENCH_DIR) -name *.c)
 # Object files
 OBJS	   := $(SRCS:$(SRC_DIR)/%=$(BUILD_DIR)/%.o)
 TEST_OBJS  := $(TEST_SRCS:./src/testing/%.c=./build/testing/%.c.o)
-BENCH_OBJS := $(BENCH_SRCS: ./src/benchmark/%.c=./build/benchmark/%.c.o)
+BENCH_OBJS := $(BENCH_SRCS:./src/benchmark/%.c=./build/benchmark/%.c.o)
 
 #----------------TARGET LINK------------------#
 $(TARGET): msg_building $(OBJS) $(BUILD_DIR)/main.c.o msg_linking
@@ -60,7 +60,7 @@ test: CFLAGS += -g
 test: ASFLAGS += -g
 
 bench: CFLAGS += -g
-bench: benchmark
+bench: ASFLAGS += -g
 
 # Remove build directory and executables
 clean:

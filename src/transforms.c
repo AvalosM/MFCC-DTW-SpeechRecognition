@@ -47,7 +47,7 @@ void fftstockham(fcomplex *x, fcomplex *y, unsigned int N)
 
 void fft(fcomplex *x, fcomplex *y, unsigned int N)
 {
-    #ifdef __SSE_ASM__
+    #ifdef __FFT_ASM__
         fftstockham_asm(x, y, N);
     #else
         fftstockham(x, y, N);
