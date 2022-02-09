@@ -2,6 +2,7 @@
 #define __TEST_H__
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #define TEST_RES_DIR(string) "./results/tests/" string
 
@@ -41,5 +42,6 @@ void testpass();
 
 /* Test suites */
 void fft_testsuite();
+void fcomplex_testsuite();
 
 #endif /* __TEST_H__ */

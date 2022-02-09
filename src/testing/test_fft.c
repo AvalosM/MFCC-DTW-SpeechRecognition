@@ -1,9 +1,7 @@
 #include "test.h"
 #include "../transforms.h"
 #include "../io.h"
-
-// extern void fft(fcomplex *x, fcomplex *y, unsigned int N);
-
+// #define __FFT_ASM__
 
 void fft_allzero()
 {
@@ -79,7 +77,7 @@ void fft_sinewave()
 
     unsigned int len = 128;
     unsigned int samplerate = len;
-    fcomplex *sinewave  = malloc(len * sizeof(fcomplex));
+    fcomplex *sinewave  = calloc(len, sizeof(fcomplex));
     fcomplex *workspace = malloc(len * sizeof(fcomplex));
 
     /* 4Hz sine wave, 2s signal */

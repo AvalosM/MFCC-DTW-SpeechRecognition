@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "test.h"
 
 void assertfail(char *file, int line)
@@ -29,4 +28,5 @@ void testpass()
 int main(void)
 {
     fft_testsuite();
+    fcomplex_testsuite();
 }
