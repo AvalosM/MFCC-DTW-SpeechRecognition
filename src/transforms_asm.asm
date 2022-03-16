@@ -1,6 +1,6 @@
 section .data
 extern twiddle
-extern cmul_pair
+extern fcmul_pair
 %define TWIDDLE_SIZE 1024
 %define FCOMPLEX_LENGTH 8
 
@@ -77,7 +77,7 @@ fftstockham_asm:
     %define t xmm0   
     movlps t, QWORD [y + rax]  ; xmm0 = | ... | y[rax]     |
     movaps xmm1, w             ; xmm1 = | ... | w          | 
-    call cmul_pair             ; xmm1 = | ... | w * y[rax] |
+    call fcmul_pair            ; xmm1 = | ... | w * y[rax] |
 
     sub rax, FCOMPLEX_LENGTH ; rax = (j * rs + k) * sizeof(fcomplex) = (j * 2) * sizeof(fcomplex)
 
@@ -109,7 +109,7 @@ fftstockham_asm:
 
     movups t, OWORD [y + rax] ; xmm0 = | y[rax + 1]    | y[rax]     |  
     movaps xmm1, w            ; xmm1 = | w             | w          | 
-    call cmul_pair            ; xmm0 = |w * y[rax + 1] | w * y[rax] |
+    call fcmul_pair           ; xmm0 = |w * y[rax + 1] | w * y[rax] |
 
     mov rax, j
     mul rs
