@@ -1,12 +1,13 @@
 section .data
+
 extern twiddle
-extern fcmul_pair
+extern fcmul_pair_asm
 %define TWIDDLE_SIZE 1024
 %define FCOMPLEX_LENGTH 8
 
 section .text
-global fftstockham_asm
 
+global fftstockham_asm
 ; void stockhamfft_asm(fcomplex *x(rdi), fcomplex *y(rsi), unsigned int N(rdx))             
 fftstockham_asm:
     ; ----------------
@@ -77,7 +78,7 @@ fftstockham_asm:
     %define t xmm0   
     movlps t, QWORD [y + rax]  ; xmm0 = | ... | y[rax]     |
     movaps xmm1, w             ; xmm1 = | ... | w          | 
-    call fcmul_pair            ; xmm1 = | ... | w * y[rax] |
+    call fcmul_pair_asm        ; xmm1 = | ... | w * y[rax] |
 
     sub rax, FCOMPLEX_LENGTH ; rax = (j * rs + k) * sizeof(fcomplex) = (j * 2) * sizeof(fcomplex)
 
@@ -109,7 +110,7 @@ fftstockham_asm:
 
     movups t, OWORD [y + rax] ; xmm0 = | y[rax + 1]    | y[rax]     |  
     movaps xmm1, w            ; xmm1 = | w             | w          | 
-    call fcmul_pair           ; xmm0 = |w * y[rax + 1] | w * y[rax] |
+    call fcmul_pair_asm       ; xmm0 = |w * y[rax + 1] | w * y[rax] |
 
     mov rax, j
     mul rs

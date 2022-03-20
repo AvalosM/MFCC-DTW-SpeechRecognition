@@ -31,7 +31,7 @@ void fftstockham(fcomplex *x, fcomplex *y, unsigned int N)
             
             for (unsigned int k = 0; k < r; k++) {
                 fcomplex t = fcmul(w, y[j * rs + k + r]);
-                x[(j * r) + k] = fcsum(y[(j * rs) + k], t);
+                x[(j * r) + k] = fcadd(y[(j * rs) + k], t);
                 x[((j + Ls) * r) + k] = fcsub(y[(j * rs) + k], t);
             }
         }
@@ -44,13 +44,39 @@ void fftstockham(fcomplex *x, fcomplex *y, unsigned int N)
     }
 }
 
+extern void fftstockham_asm(fcomplex *x, fcomplex *y, unsigned int N);
 
 void fft(fcomplex *x, fcomplex *y, unsigned int N)
 {
-    #ifdef __FFT_ASM__
+    #ifdef __FFT_SSE__
         fftstockham_asm(x, y, N);
     #else
         fftstockham(x, y, N);
     #endif
 
+}
+
+void fct(fcomplex *x, fcomplex *y, unsigned int N)
+{
+    /* v(n) : reordered x(n) */
+    fcomplex *v = y;
+    for (unsigned int n = 0; n < N / 2; n++) {
+        v[n]         = x[2 * n];     /* x_even */
+        v[N - 1 - n] = x[2 * n + 1]; /* x_odd in reverse */
+    }
+
+    /* DFT of v(n), V(k) */
+    fft(v, x, N);
+
+    /* DCT = Cc(k) = C(k) - iC(N - k) = 2 * W_4N^k * V(k) */
+    for (unsigned int k = 0; k < N / 2; k++) {
+        fcomplex wk, Cck;
+        wk = (fcomplex) {2 * cosf(k * PI / (2 * N)), 2 * sinf(k * PI / (2 * N))};  /* 2 * W_2N^k */
+
+        /* Calculate Cc(omplex)(k) */
+        Cck = fcmul(wk, v[k]);
+        
+        x[k].real         = Cck.real;
+        x[N - 1 - k].real = Cck.imag;
+    }
 }

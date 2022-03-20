@@ -11,26 +11,16 @@ typedef struct __attribute__((packed)) fcomplex
 
 fcomplex fcmul(fcomplex x, fcomplex y);
 
-fcomplex fcfmul(fcomplex x, float y);
-
-fcomplex fcsum(fcomplex x, fcomplex y);
+fcomplex fcadd(fcomplex x, fcomplex y);
 
 fcomplex fcsub(fcomplex x, fcomplex y);
 
-float fcabs(fcomplex x);
+fcomplex fcabs(fcomplex x);
 
 /**
- * @brief Dot product between fcomplex and float vector
- * 
- * @param *x pointer to fcomplex array
- * @param *y pointer to float array
- * @param length Array length
+ * Multiply two pairs of complex numbers (ASM/SSE implementation)
+ * Reference: Intel® 64 and IA-32 Architectures Optimization Reference Manual
  */
-fcomplex fcfdot(fcomplex *x, float *y, unsigned int length);
-
-
-
-extern fcomplex fcmul_pair(fcomplex x, fcomplex y);
-extern fcomplex fcfdot_asm(fcomplex *x, float *y, unsigned int length);
+extern fcomplex fcmul_pair_asm(fcomplex x, fcomplex y);
 
 #endif /* __FCOMPLEX_H__ */

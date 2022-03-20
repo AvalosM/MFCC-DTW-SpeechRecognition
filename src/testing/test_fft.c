@@ -1,7 +1,6 @@
 #include "test.h"
 #include "../transforms.h"
 #include "../io.h"
-// #define __FFT_ASM__
 
 void fft_allzero()
 {
@@ -45,7 +44,7 @@ void fft_linearity()
 
     fcomplex *y = (fcomplex*)calloc(len, sizeof(fcomplex));
     for (unsigned int i = 0; i < len; i++) {
-        y[i] = fcsum(fcmul(a1, x1[i]), fcmul(a2, x2[i]));
+        y[i] = fcadd(fcmul(a1, x1[i]), fcmul(a2, x2[i]));
     }
 
     fcomplex *workspace = (fcomplex*)calloc(len, sizeof(fcomplex));
@@ -54,7 +53,7 @@ void fft_linearity()
     fft(x1, workspace, len);
     fft(x2, workspace, len);
     for (unsigned int i = 0; i < len; i++) {
-        x1[i] = fcsum(fcmul(a1, x1[i]), fcmul(a2, x2[i])); /* a1 FFT(x1[n]) + a2 FFT(x2[n]) */
+        x1[i] = fcadd(fcmul(a1, x1[i]), fcmul(a2, x2[i])); /* a1 FFT(x1[n]) + a2 FFT(x2[n]) */
     }
 
     for (unsigned int i = 0; i < len; i++) {
@@ -92,7 +91,7 @@ void fft_sinewave()
     /* Bin corresponding with periodogram peak should be found at 4hz(4th bin) */
     unsigned int max_bin = 0;
     for (unsigned int i = 1; i < len / 2 + 1; i++) {
-        max_bin = powf(fcabs(sinewave[i]), 2) > powf(fcabs(sinewave[max_bin]), 2) ? i : max_bin;
+        max_bin = powf(fcabs(sinewave[i]).real, 2) > powf(fcabs(sinewave[max_bin]).real, 2) ? i : max_bin;
     }
     unsigned int expected = 4;
     ASSERT_EQ(max_bin, expected);
@@ -125,9 +124,9 @@ void fft_wavesum()
     unsigned int max_bin = 0;
     unsigned int second_max_bin = 0;
     for (unsigned int i = 1; i < len / 2 + 1; i++) {
-        if (powf(fcabs(signal[i]), 2) > powf(fcabs(signal[max_bin]), 2)){
+        if (powf(fcabs(signal[i]).real, 2) > powf(fcabs(signal[max_bin]).real, 2)){
             max_bin = i;
-        } else if (powf(fcabs(signal[i]), 2) > powf(fcabs(signal[second_max_bin]), 2)){
+        } else if (powf(fcabs(signal[i]).real, 2) > powf(fcabs(signal[second_max_bin]).real, 2)){
             second_max_bin = i;
         }
     }
