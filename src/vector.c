@@ -32,6 +32,15 @@ void fcomplex_vector_mul(fcomplex *x, fcomplex *y, unsigned int length)
     #endif
 }
 
+float float_vector_dot(float *x, float *y, unsigned int length)
+{
+    float res = 0;
+    for (unsigned int i = 0; i < length; i++) {
+        res += x[i] * y[i];
+    }
+    return res;
+}
+
 void float_vector_mul(float *x, float *y, unsigned int length)
 {
     #ifdef __VECTOR_SSE__

@@ -7,6 +7,8 @@ fcomplex fcomplex_vector_dot(fcomplex *x, fcomplex *y, unsigned int length);
 
 void fcomplex_vector_mul(fcomplex *x, fcomplex *y, unsigned int length);
 
+float float_vector_dot(float *x, float *y, unsigned int length);
+
 void float_vector_mul(float *x, float *y, unsigned int length);
 
 /* 
