@@ -57,11 +57,8 @@ dkms.conf
 # Directories
 data/
 build/
-results/
+res/
 
 # Executables
 speechr
 test
-
-# Vscode
-.vscode/
