@@ -28,5 +28,4 @@ void testpass()
 int main(void)
 {
     fft_testsuite();
-    fcomplex_testsuite();
 }

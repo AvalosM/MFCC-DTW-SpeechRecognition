@@ -91,7 +91,7 @@ void fft_sinewave()
     /* Bin corresponding with periodogram peak should be found at 4hz(4th bin) */
     unsigned int max_bin = 0;
     for (unsigned int i = 1; i < len / 2 + 1; i++) {
-        max_bin = powf(fcabs(sinewave[i]).real, 2) > powf(fcabs(sinewave[max_bin]).real, 2) ? i : max_bin;
+        max_bin = powf(fcabs(sinewave[i]), 2) > powf(fcabs(sinewave[max_bin]), 2) ? i : max_bin;
     }
     unsigned int expected = 4;
     ASSERT_EQ(max_bin, expected);
@@ -124,9 +124,9 @@ void fft_wavesum()
     unsigned int max_bin = 0;
     unsigned int second_max_bin = 0;
     for (unsigned int i = 1; i < len / 2 + 1; i++) {
-        if (powf(fcabs(signal[i]).real, 2) > powf(fcabs(signal[max_bin]).real, 2)){
+        if (powf(fcabs(signal[i]), 2) > powf(fcabs(signal[max_bin]), 2)){
             max_bin = i;
-        } else if (powf(fcabs(signal[i]).real, 2) > powf(fcabs(signal[second_max_bin]).real, 2)){
+        } else if (powf(fcabs(signal[i]), 2) > powf(fcabs(signal[second_max_bin]), 2)){
             second_max_bin = i;
         }
     }

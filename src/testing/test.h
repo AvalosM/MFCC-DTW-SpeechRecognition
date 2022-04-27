@@ -42,6 +42,5 @@ void testpass();
 
 /* Test suites */
 void fft_testsuite();
-void fcomplex_testsuite();
 
 #endif /* __TEST_H__ */
