@@ -28,4 +28,5 @@ void testpass()
 int main(void)
 {
     fft_testsuite();
+    vector_testsuite();
 }
