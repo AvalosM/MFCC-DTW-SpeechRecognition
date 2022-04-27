@@ -23,7 +23,7 @@ fcomplex fcsub(fcomplex x, fcomplex y)
     return (fcomplex){ x.real - y.real, x.imag - y.imag };
 }
 
-fcomplex fcabs(fcomplex x)
+float fcabs(fcomplex x)
 {
-    return (fcomplex){sqrtf(powf(x.real, 2) + powf(x.imag, 2)), 0};
+    return (float)sqrtf(powf(x.real, 2) + powf(x.imag, 2));
 }

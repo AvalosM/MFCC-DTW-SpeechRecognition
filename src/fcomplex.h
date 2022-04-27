@@ -3,7 +3,7 @@
 
 #include <math.h>
 
-typedef struct __attribute__((packed)) fcomplex 
+typedef struct fcomplex 
 {
     float real;
     float imag;
@@ -15,7 +15,7 @@ fcomplex fcadd(fcomplex x, fcomplex y);
 
 fcomplex fcsub(fcomplex x, fcomplex y);
 
-fcomplex fcabs(fcomplex x);
+float fcabs(fcomplex x);
 
 /**
  * Multiply two pairs of complex numbers (ASM/SSE implementation)
