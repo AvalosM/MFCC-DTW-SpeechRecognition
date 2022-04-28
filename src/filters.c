@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include "filters.h"
-#include "vector.h"
 
 void preemphasis(float *signal, unsigned int signal_length)
 {
@@ -20,7 +19,6 @@ float *hammingwindow(unsigned int length)
     for (unsigned int i = 0; i < length; i++) {
         window[i] = 0.54 - 0.46 * cos((2 * PI * i)/length);
     }
-    
     return window;
 }
 
@@ -37,7 +35,7 @@ float imel(float mel)
     return 700 * (expf(mel / 1125) - 1);
 }
 
-float *melfilterbank(float lower_freq, float upper_freq, unsigned int samplerate, unsigned int fft_size)
+matrixfc *melfilterbank(float lower_freq, float upper_freq, unsigned int samplerate, unsigned int fft_size)
 {
     /* Convert lower and upper bounds to Mel scale */
     float lower_freq_mel = mel(lower_freq);
@@ -57,22 +55,23 @@ float *melfilterbank(float lower_freq, float upper_freq, unsigned int samplerate
 
     /* Create filterbank */
     unsigned int bin_count = (fft_size / 2) + 1; /* Bins corresponding with the positive part of the spectrum (first half + 1) */
-    float *fbank = calloc(MEL_FILTER_NUM * bin_count, sizeof(float));
+    matrixfc *filterbank = matrixfc_new(MEL_FILTER_NUM, bin_count, COL_MAJOR);
     for (unsigned int m = 1; m < MEL_FILTER_NUM + 1; m++) {
         for (unsigned int k = 0; k < bin_count; k++){
-            unsigned int fbank_index = (m - 1) * bin_count + k;
+            fcomplex *curr_position = matrixf_at(filterbank, (m-1), k);
+            (*curr_position).imag = 0;
             if (k < fft_bins[m - 1]) {
-                fbank[fbank_index] = 0;
+                (*curr_position).real = 0;
             } else if (k <= fft_bins[m]) {
-                fbank[fbank_index] = (k - fft_bins[m - 1]) / (fft_bins[m] - fft_bins[m - 1]);
+                (*curr_position).real = (k - fft_bins[m - 1]) / (fft_bins[m] - fft_bins[m - 1]);
             } else if (k <= fft_bins[m + 1]) {
-                fbank[fbank_index] = (fft_bins[m + 1] - k) / (fft_bins[m + 1] - fft_bins[m]);
+                (*curr_position).real = (fft_bins[m + 1] - k) / (fft_bins[m + 1] - fft_bins[m]);
             } else {
-                fbank[fbank_index] = 0;
+                (*curr_position).real = 0;
             }
         }
     }
 
     free(fft_bins);
-    return fbank;
+    return filterbank;
 }

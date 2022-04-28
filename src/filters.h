@@ -2,6 +2,7 @@
 #define __FILTERS_H__
 
 #include <math.h>
+#include "matrix.h"
 #define PI 3.14159265358979323846
 #define MEL_FILTER_NUM 40
 
@@ -35,7 +36,7 @@ float *hammingwindow(unsigned int length);
  * @param fft_size 
  * @return float* 
  */
-float *melfilterbank(float lower_freq, float upper_freq, unsigned int samplerate, unsigned int fft_size);
+matrixfc *melfilterbank(float lower_freq, float upper_freq, unsigned int samplerate, unsigned int fft_size);
 
 
 #endif /* __FILTERS_H__ */

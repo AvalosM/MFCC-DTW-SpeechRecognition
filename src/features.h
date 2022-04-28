@@ -2,19 +2,19 @@
 #define __FEATURES_H__
 
 #include "fcomplex.h"
+#include "matrix.h"
 
 #define FRAME_LEN_MS 0.025
 #define FRAME_STR_MS 0.01
 
-#define MEL_FILTER_NUM 40
-#define MEL_DCT_SIZE 64
+#define MEL_LOWER_FREQ 300
 
 #define MFCC_FEATURE_NUM 12
 #define MFCC_FIRST_FEATURE 2
 
 #define FEATURE_NUM 12
 
-void mfcc_init(unsigned int samplerate, float lower_freq, float upper_freq);
+void mfcc_init(unsigned int samplerate, unsigned int lower_freq, unsigned int upper_freq);
 
 /**
  * @brief Calculate MFCC feature vector of a single frame
@@ -26,6 +26,6 @@ void mfcc_init(unsigned int samplerate, float lower_freq, float upper_freq);
  * @param frame_length 
  * @param fbank 
  */
-void mfcc(fcomplex *frame, fcomplex *workspace, float *features);
+float *mfcc(matrixfc *frames, fcomplex *workspace);
 
 #endif /* __FEATURES_H__ */
