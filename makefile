@@ -1,7 +1,3 @@
-TARGET := speechr
-TEST   := test
-BENCH  := bench
-
 CC	   := gcc
 CFLAGS := -Wall -Wextra -pedantic -Wshadow -Wdouble-promotion
 LIBS   := -lsndfile -lm
@@ -14,6 +10,10 @@ BUILD_DIR := ./build
 SRC_DIR   := ./src
 TEST_DIR  := ./src/testing
 BENCH_DIR := ./src/benchmark
+
+TARGET := $(BUILD_DIR)/speechr
+TEST   := $(BUILD_DIR)/testing/test
+BENCH  := $(BUILD_DIR)/benchmark/bench
 
 # Find all the source files needed to build
 SRCS       := $(shell find $(SRC_DIR) -maxdepth 1 ! -name "main.c" -name "*.c" -or -name "*.asm")
@@ -58,9 +58,11 @@ all: $(TARGET)
 
 test: CFLAGS += -g
 test: ASFLAGS += -g
+test: $(TEST)
 
 bench: CFLAGS += -g
 bench: ASFLAGS += -g
+bench: $(BENCH)
 
 # Remove build directory and executables
 clean:
