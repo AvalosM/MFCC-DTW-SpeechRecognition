@@ -8,6 +8,53 @@
 #define COL_MAJOR 0
 
 /**
+ * float matrix
+ */
+typedef struct matrixf {
+    float *data;
+    unsigned int rows;
+    unsigned int cols;
+    int order;
+} matrixf;
+
+matrixf *matrixf_new(unsigned int n_rows, unsigned int n_cols, int order);
+
+void matrixf_free(matrixf *mat);
+
+float *matrixf_at(matrixf *mat, unsigned int row, unsigned int col);
+
+/**
+ * @brief Float matrix fast dot product
+ * 
+ * Requires m1 to be row-major and m2 column-major
+ * Rows in m1 and columns in m2 being contiguous in memory allows for faster computation
+ * Allocates matrix user should free
+ * 
+ * @param m1 Row-major float matrix
+ * @param m2 Column-major float matrix
+ * @return matrixf* 
+ */
+matrixf *matrixf_dot_fast(matrixf *m1, matrixf *m2);
+
+/**
+ * @brief Entrywise matrix multiplication
+ * 
+ * Matrices must have the same dimension
+ * 
+ * @param m1
+ * @param m2
+ */
+void matrixf_mul_r(matrixf *m1, matrixf *m2);
+
+/**
+ * @brief Matrix multiplication by scalar
+ * 
+ * @param mat
+ * @param scalar 
+ */
+void matrixf_smul_r(matrixf *mat, float scalar);
+
+/**
  * fcomplex matrix
  */
 typedef struct matrixfc {
@@ -23,23 +70,29 @@ void matrixfc_free(matrixfc *mat);
 
 fcomplex *matrixfc_at(matrixfc *mat, unsigned int row, unsigned int col);
 
-matrixfc *matrixfc_dot_fast(matrixfc *m1, matrixfc *m2);
+// matrixfc *matrixfc_dot_fast(matrixfc *m1, matrixfc *m2);
 
-void matrixfc_abs_r(matrixfc *mat);
+/**
+ * @brief Entrywise absolute value of an fcomplex matrix
+ * 
+ * Allocates matrix user shoud free
+ * 
+ * @param mat 
+ * @return matrixf* Pointer to float matrix containing absolute values 
+ */
+matrixf *matrixfc_abs(matrixfc *mat);
 
-void matrixfc_smult_r(matrixfc *mat, float scalar);
+// void matrixfc_smult_r(matrixfc *mat, float scalar);
 
-void matrixfc_mul_r(matrixfc *m1, matrixfc *m2);
+// void matrixfc_mul_r(matrixfc *m1, matrixfc *m2);
 
 /* 
  * ASM/SSE implementations
  */
+extern float vectorf_dot_asm(float *v1, float *v2, unsigned int length);
+extern void vectorf_mul_r_asm(float *v1, float *v2, unsigned int length);
+extern void vectorf_smul_r_asm(float *vec, float scalar, unsigned int length);
 extern fcomplex vectorfc_dot_asm(fcomplex *v1, fcomplex *v2, unsigned int length);
-
-/**
- * float matrix
- */
-
-
+extern float vectorfc_abs_asm(fcomplex *vec, unsigned int length);
 
 #endif /* __MATRIX_H__ */
