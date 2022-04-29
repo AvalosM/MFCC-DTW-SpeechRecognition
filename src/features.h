@@ -26,6 +26,6 @@ void mfcc_init(unsigned int samplerate, unsigned int lower_freq, unsigned int up
  * @param frame_length 
  * @param fbank 
  */
-float *mfcc(matrixfc *frames, fcomplex *workspace);
+matrixf *mfcc(matrixfc *frames, matrixf *filterbank);
 
 #endif /* __FEATURES_H__ */
