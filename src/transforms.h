@@ -26,10 +26,10 @@ void twiddle_init();
  * VAN LOAN, Charles. Computational frameworks for the fast Fourier transform. Society for Industrial and Applied Mathematics, 1992. p.57
  * 
  * @param x Input signal
- * @param y Additional workspace (size N) required to compute the transform
+ * @param workspace Additional workspace (size N) required to compute the transform
  * @param N Signal length 
  */
-void fft(fcomplex *x, fcomplex *y, unsigned int N);
+void fft(fcomplex *signal, fcomplex *workspace, unsigned int signal_length);
 
 /**
  * @brief Fast cosine transform using forward fft
@@ -38,11 +38,12 @@ void fft(fcomplex *x, fcomplex *y, unsigned int N);
  * 
  * Reference:
  * MAKHOUL, John. A fast cosine transform in one and two dimensions. IEEE Transactions on Acoustics, Speech, and Signal Processing, 1980, vol. 28, no 1, p. 27-34.
+ * https://www.nayuki.io/page/fast-discrete-cosine-transform-algorithms
  * 
  * @param x Input signal
- * @param y Additional workspace (size N) required to compute the transform
+ * @param workspace Additional workspace (size N) required to compute the transform
  * @param N Signal length
  */
-void fct(fcomplex *x, fcomplex *y, unsigned int N);
+void fct(float *signal, unsigned int signal_length);
 
 #endif /* __TRANSFORMS_H__ */

@@ -10,16 +10,16 @@ void twiddle_init()
     }
 }
 
-void fftstockham(fcomplex *x, fcomplex *y, unsigned int N)
+void fftstockham(fcomplex *x, fcomplex *workspace, unsigned int N)
 {
-    fcomplex *y_ini = y;
+    fcomplex *y_ini = workspace;
     /* For q=1 to log_2(N) */
     for (unsigned int L = 2; L <= N; L <<= 1) {
         
         /* Swap pointers */
         fcomplex *tmp = x;
-        x = y;
-        y = tmp;
+        x = workspace;
+        workspace = tmp;
 
         unsigned int Ls = L >> 1;
         unsigned int r = N / L;
@@ -30,53 +30,58 @@ void fftstockham(fcomplex *x, fcomplex *y, unsigned int N)
             fcomplex w = twiddle[j * TWIDDLE_TABLE_SIZE / Ls];
             
             for (unsigned int k = 0; k < r; k++) {
-                fcomplex t = fcmul(w, y[j * rs + k + r]);
-                x[(j * r) + k] = fcadd(y[(j * rs) + k], t);
-                x[((j + Ls) * r) + k] = fcsub(y[(j * rs) + k], t);
+                fcomplex t = fcmul(w, workspace[j * rs + k + r]);
+                x[(j * r) + k] = fcadd(workspace[(j * rs) + k], t);
+                x[((j + Ls) * r) + k] = fcsub(workspace[(j * rs) + k], t);
             }
         }
     }
-    /* If log_2(N) is odd, result values are stored on additional workspace y */
-    if (y != y_ini) {
+    /* If log_2(N) is odd, result values are stored on additional workspace workspace */
+    if (workspace != y_ini) {
         for (unsigned int i = 0; i < N; i++) {
-            y[i] = x[i];
+            workspace[i] = x[i];
         }
     }
 }
 
-extern void fftstockham_asm(fcomplex *x, fcomplex *y, unsigned int N);
+extern void fftstockham_asm(fcomplex *x, fcomplex *workspace, unsigned int N);
 
-void fft(fcomplex *x, fcomplex *y, unsigned int N)
+void fft(fcomplex *x, fcomplex *workspace, unsigned int N)
 {
     #ifdef __FFT_SSE__
-        fftstockham_asm(x, y, N);
+        fftstockham_asm(x, workspace, N);
     #else
-        fftstockham(x, y, N);
+        fftstockham(x, workspace, N);
     #endif
 
 }
 
-void fct(fcomplex *x, fcomplex *y, unsigned int N)
+void fct(float *signal, unsigned int signal_length)
 {
-    /* v(n) : reordered x(n) */
-    fcomplex *v = y;
-    for (unsigned int n = 0; n < N / 2; n++) {
-        v[n]         = x[2 * n];     /* x_even */
-        v[N - 1 - n] = x[2 * n + 1]; /* x_odd in reverse */
+    fcomplex *v = calloc(signal_length, sizeof(fcomplex));
+    fcomplex *workspace = malloc(signal_length * sizeof(fcomplex));
+
+    /* v(n) : reordered signal(n) */
+    for (unsigned int n = 0; n < signal_length / 2; n++) {
+        v[n].real                     = signal[2 * n];     /* x_even */
+        v[signal_length - 1 - n].real = signal[2 * n + 1]; /* x_odd in reverse */
     }
 
     /* DFT of v(n), V(k) */
-    fft(v, x, N);
+    fft(v, workspace, signal_length);
 
     /* DCT = Cc(k) = C(k) - iC(N - k) = 2 * W_4N^k * V(k) */
-    for (unsigned int k = 0; k < N / 2; k++) {
+    for (unsigned int k = 0; k < signal_length / 2; k++) {
         fcomplex wk, Cck;
-        wk = (fcomplex) {2 * cosf(k * PI / (2 * N)), 2 * sinf(k * PI / (2 * N))};  /* 2 * W_2N^k */
+        /* TODO twiddle table*/
+        wk = (fcomplex) {2 * cosf(k * PI / (2 * signal_length)), 2 * sinf(k * PI / (2 * signal_length))};  /* 2 * W_2N^k */
 
         /* Calculate Cc(omplex)(k) */
         Cck = fcmul(wk, v[k]);
         
-        x[k].real         = Cck.real;
-        x[N - 1 - k].real = Cck.imag;
+        signal[k]                     = Cck.real;
+        signal[signal_length - 1 - k] = Cck.imag;
     }
+    free(v);
+    free(workspace);
 }
