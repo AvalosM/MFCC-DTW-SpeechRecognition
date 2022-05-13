@@ -4,9 +4,9 @@ fcomplex twiddle[TWIDDLE_TABLE_SIZE];
 
 void twiddle_init()
 {
-    for (unsigned int i = 0; i < TWIDDLE_TABLE_SIZE; i++) {
-        twiddle[i].real = cosf(PI * i / TWIDDLE_TABLE_SIZE);
-        twiddle[i].imag = sinf(PI * i / TWIDDLE_TABLE_SIZE);
+    for (unsigned int j = 0; j < TWIDDLE_TABLE_SIZE; j++) {
+        twiddle[j].real = cosf(-2 * PI * j / TWIDDLE_TABLE_SIZE);
+        twiddle[j].imag = sinf(-2 * PI * j / TWIDDLE_TABLE_SIZE);
     }
 }
 
@@ -27,7 +27,7 @@ void fftstockham(fcomplex *x, fcomplex *workspace, unsigned int N)
 
         for (unsigned int j = 0; j < Ls; j++) {
             /* Twiddle factor */
-            fcomplex w = twiddle[j * TWIDDLE_TABLE_SIZE / Ls];
+            fcomplex w = twiddle[j * TWIDDLE_TABLE_SIZE / L];
             
             for (unsigned int k = 0; k < r; k++) {
                 fcomplex t = fcmul(w, workspace[j * rs + k + r]);
@@ -36,7 +36,7 @@ void fftstockham(fcomplex *x, fcomplex *workspace, unsigned int N)
             }
         }
     }
-    /* If log_2(N) is odd, result values are stored on additional workspace workspace */
+    /* If log_2(N) is odd, result values are stored on additional workspace */
     if (workspace != y_ini) {
         for (unsigned int i = 0; i < N; i++) {
             workspace[i] = x[i];
@@ -56,32 +56,25 @@ void fft(fcomplex *x, fcomplex *workspace, unsigned int N)
 
 }
 
-void fct(float *signal, unsigned int signal_length)
+/* Naive Discrete cosine transform II implementation */
+/* https://en.wikipedia.org/wiki/Discrete_cosine_transform */
+void dct_naive(float *signal, unsigned int length)
 {
-    fcomplex *v = calloc(signal_length, sizeof(fcomplex));
-    fcomplex *workspace = malloc(signal_length * sizeof(fcomplex));
-
-    /* v(n) : reordered signal(n) */
-    for (unsigned int n = 0; n < signal_length / 2; n++) {
-        v[n].real                     = signal[2 * n];     /* x_even */
-        v[signal_length - 1 - n].real = signal[2 * n + 1]; /* x_odd in reverse */
+    float *workspace = malloc(length * sizeof(float));
+    for (unsigned int k = 0; k < length; k++) {
+        float sum = 0;
+        for (unsigned int n = 0; n < length; n++) {
+            sum += signal[n] * cosf((n + 0.5) * k * PI / length);
+        }
+        workspace[k] = sum;
     }
-
-    /* DFT of v(n), V(k) */
-    fft(v, workspace, signal_length);
-
-    /* DCT = Cc(k) = C(k) - iC(N - k) = 2 * W_4N^k * V(k) */
-    for (unsigned int k = 0; k < signal_length / 2; k++) {
-        fcomplex wk, Cck;
-        /* TODO twiddle table*/
-        wk = (fcomplex) {2 * cosf(k * PI / (2 * signal_length)), 2 * sinf(k * PI / (2 * signal_length))};  /* 2 * W_2N^k */
-
-        /* Calculate Cc(omplex)(k) */
-        Cck = fcmul(wk, v[k]);
-        
-        signal[k]                     = Cck.real;
-        signal[signal_length - 1 - k] = Cck.imag;
+    for (unsigned int i = 0; i < length; i++) {
+        signal[i] = workspace[i];
     }
-    free(v);
     free(workspace);
+}
+
+void fct(float *signal, unsigned int length)
+{
+    dct_naive(signal, length);
 }

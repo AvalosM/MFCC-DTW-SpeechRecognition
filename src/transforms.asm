@@ -57,8 +57,8 @@ fftstockham_asm:
 
     mov rax, TWIDDLE_SIZE
     mul j
-    div Ls
-    shl rax, 3 ; rax = (j * TWIDDLE_SIZE / LS) * sizeof(fcomplex)
+    div L
+    shl rax, 3 ; rax = (j * TWIDDLE_SIZE / L) * sizeof(fcomplex)
 
     %define w xmm5
     movlps w, QWORD [twiddle + rax]
