@@ -35,7 +35,7 @@ float imel(float mel)
     return 700 * (expf(mel / 1125) - 1);
 }
 
-matrixfc *melfilterbank(float lower_freq, float upper_freq, unsigned int samplerate, unsigned int fft_size)
+matrixf *melfilterbank(float lower_freq, float upper_freq, unsigned int samplerate, unsigned int fft_size)
 {
     /* Convert lower and upper bounds to Mel scale */
     float lower_freq_mel = mel(lower_freq);
@@ -45,29 +45,27 @@ matrixfc *melfilterbank(float lower_freq, float upper_freq, unsigned int sampler
     /* Linearly spaced (in Mel scale) filter centre-frequencies */
     float *fft_bins = malloc((MEL_FILTER_NUM + 2)* sizeof(float));
     for (unsigned int i = 0; i < MEL_FILTER_NUM + 2; i++) {
-        fft_bins[i] = imel(lower_freq_mel + (step_freq_mel * i));
+        fft_bins[i] = lower_freq_mel + (step_freq_mel * i);
     }
 
     /* Round to nearest fft frequency bin */
     for (unsigned int i = 0; i < MEL_FILTER_NUM + 2; i++) {
-        fft_bins[i] = floorf((fft_size + 1) * fft_bins[i] / samplerate);
+        fft_bins[i] = floorf((fft_size + 1) * imel(fft_bins[i]) / samplerate);
     }
 
     /* Create filterbank */
-    unsigned int bin_count = (fft_size / 2) + 1; /* Bins corresponding with the positive part of the spectrum (first half + 1) */
-    matrixfc *filterbank = matrixfc_new(MEL_FILTER_NUM, bin_count, COL_MAJOR);
+    matrixf *filterbank = matrixf_new(fft_size, MEL_FILTER_NUM, COL_MAJOR);
     for (unsigned int m = 1; m < MEL_FILTER_NUM + 1; m++) {
-        for (unsigned int k = 0; k < bin_count; k++){
-            fcomplex *curr_position = matrixf_at(filterbank, (m-1), k);
-            (*curr_position).imag = 0;
+        float *filter_m = matrixf_at(filterbank, 0, m - 1);
+        for (unsigned int k = 0; k < fft_size; k++) {
             if (k < fft_bins[m - 1]) {
-                (*curr_position).real = 0;
+                filter_m[k] = 0;
             } else if (k <= fft_bins[m]) {
-                (*curr_position).real = (k - fft_bins[m - 1]) / (fft_bins[m] - fft_bins[m - 1]);
+                filter_m[k] = (k - fft_bins[m - 1]) / (fft_bins[m] - fft_bins[m - 1]);
             } else if (k <= fft_bins[m + 1]) {
-                (*curr_position).real = (fft_bins[m + 1] - k) / (fft_bins[m + 1] - fft_bins[m]);
+                filter_m[k] = (fft_bins[m + 1] - k) / (fft_bins[m + 1] - fft_bins[m]);
             } else {
-                (*curr_position).real = 0;
+                filter_m[k] = 0;
             }
         }
     }
