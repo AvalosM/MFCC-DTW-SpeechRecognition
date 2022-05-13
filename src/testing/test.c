@@ -27,6 +27,6 @@ void testpass()
 
 int main(void)
 {
-    fft_testsuite();
     matrix_testsuite();
+    fft_testsuite();
 }

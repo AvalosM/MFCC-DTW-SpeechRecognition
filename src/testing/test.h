@@ -41,7 +41,7 @@ void testfail();
 void testpass();
 
 /* Test suites */
-void fft_testsuite();
 void matrix_testsuite();
+void fft_testsuite();
 
 #endif /* __TEST_H__ */

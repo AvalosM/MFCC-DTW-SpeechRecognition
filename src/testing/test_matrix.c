@@ -1,68 +1,65 @@
 #include "test.h"
 #include "../matrix.h"
 
-void matrix_vectorfc_dot_asm()
+void matrix_vectorf_dot_asm()
 {
     testinit("vectorf_dot_asm");
-    unsigned int len = 16;
-    fcomplex *x = (fcomplex*)calloc(len, sizeof(fcomplex));
-    fcomplex *y = (fcomplex*)calloc(len, sizeof(fcomplex));
 
-    for (unsigned int i = 0; i < len; i++) {
-        x[i] = (fcomplex){2, 0};
-        y[i] = (fcomplex){2, 0};
+    float v1[8] = {2, 2, 2, 2, 2, 2, 2, 2};
+    float v2[8] = {2, 2, 2, 2, 2, 2, 2, 2};
+
+    for (unsigned int i = 0; i < 8; i++) {
+        float result = vectorf_dot_asm(v1, v2, i);
+        ASSERT_EQ(result, 4 * i);
     }
-
-    for (unsigned int i = 1; i <= len; i++) {
-        fcomplex result = vectorfc_dot_asm(x, y, i);
-        fcomplex expected = (fcomplex){4 * i, 0};
-        ASSERT_EQ(result.real, expected.real);
-        ASSERT_EQ(result.imag, expected.imag);
-    }
-
-    free(x);
-    free(y);
 
     testpass();
 }
 
-void matrix_matrixfc_dot_fast()
+void matrix_matrixf_dot_fast()
 {
     testinit("matrixf_dot_fast");
-
-    matrixfc *m1 = matrixfc_new(2, 2, ROW_MAJOR);
-    matrixfc *m2 = matrixfc_new(2, 2, COL_MAJOR);
+    /* Square Multiplication */
+    matrixf *m1 = matrixf_new(3, 3, ROW_MAJOR);
+    matrixf *m2 = matrixf_new(3, 3, COL_MAJOR);
     /**
-     * [1, 1] * [1, 2] = [2, 4]
-     * [2, 2]   [1, 2]   [4, 8]
+     * [1, 1, 1] * [1, 2, 3] = [ 3,  6,  9]
+     * [2, 2, 2]   [1, 2, 3]   [ 6, 12, 18]
+     * [3, 3, 3]   [1, 2, 3]   [ 9, 18, 27]
      */
-    fcomplex arr1[4] = {{1,0}, {1,0},
-                        {2,0}, {2,0}};
-    fcomplex arr2[4] = {{1,0}, {1,0},
-                        {2,0}, {2,0}};
-    fcomplex expected[4] = {{2,0}, {4,0},
-                            {4,0}, {8,0}};
+    float arr1[9] = {1, 1, 1,
+                     2, 2, 2,
+                     3, 3, 3};
+    float arr2[9] = {1, 1, 1,
+                     2, 2, 2,
+                     3, 3, 3};
+    float expected[9] = {3, 6, 9,
+                         6, 12, 18,
+                         9, 18, 27};
     m1->data = arr1;
     m2->data = arr2;
 
-    matrixfc *result = matrixfc_dot_fast(m1, m2);
-    ASSERT(result->rows == 2);
-    ASSERT(result->cols == 2);
-
-    for (unsigned int i = 0; i < 4; i++) {
-        ASSERT_EQ(result->data[i].real, expected[i].real);
-        ASSERT_EQ(result->data[i].imag, expected[i].imag);
+    matrixf *result;
+    for (unsigned int m2_ncols = 1; m2_ncols < 4; m2_ncols++) {
+        m2->cols = m2_ncols;
+        result = matrixf_dot_fast(m1, m2);
+            ASSERT(result->rows == 3);
+            ASSERT(result->cols == m2_ncols);
+            for (unsigned int i = 0; i < result->rows; i++) {
+                for (unsigned int j = 0; j < result->cols; j++) {
+                    ASSERT_EQ(*matrixf_at(result, i, j), expected[i * 3 + j]);
+                }
+            }
     }
-
+    matrixf_free(result);
     free(m1);
     free(m2);
-    matrixfc_free(result);
     testpass();
 }
 
 void matrix_testsuite()
 {
     suiteinit("Matrix");
-    matrix_vectorfc_dot_asm();
-    matrix_matrixfc_dot_fast();
+    matrix_vectorf_dot_asm();
+    matrix_matrixf_dot_fast();
 }
