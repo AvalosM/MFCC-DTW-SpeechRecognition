@@ -2,7 +2,7 @@
 #define __MATRIX_H__
 
 #include "fcomplex.h"
-#define __MATRIX_SSE__
+// #define __MATRIX_SSE__
 
 #define ROW_MAJOR 1
 #define COL_MAJOR 0
@@ -20,6 +20,8 @@ typedef struct matrixf {
 matrixf *matrixf_new(unsigned int n_rows, unsigned int n_cols, int order);
 
 void matrixf_free(matrixf *mat);
+
+void matrixf_set(matrixf *mat, float value);
 
 float *matrixf_at(matrixf *mat, unsigned int row, unsigned int col);
 
@@ -54,6 +56,8 @@ void matrixf_mul_r(matrixf *m1, matrixf *m2);
  */
 void matrixf_smul_r(matrixf *mat, float scalar);
 
+float vectorf_dist(float *v1, float *v2, unsigned int length);
+
 /**
  * fcomplex matrix
  */
@@ -70,8 +74,6 @@ void matrixfc_free(matrixfc *mat);
 
 fcomplex *matrixfc_at(matrixfc *mat, unsigned int row, unsigned int col);
 
-// matrixfc *matrixfc_dot_fast(matrixfc *m1, matrixfc *m2);
-
 /**
  * @brief Entrywise absolute value of an fcomplex matrix
  * 
@@ -82,9 +84,6 @@ fcomplex *matrixfc_at(matrixfc *mat, unsigned int row, unsigned int col);
  */
 matrixf *matrixfc_abs(matrixfc *mat);
 
-// void matrixfc_smult_r(matrixfc *mat, float scalar);
-
-// void matrixfc_mul_r(matrixfc *m1, matrixfc *m2);
 
 /* 
  * ASM/SSE implementations
@@ -92,7 +91,6 @@ matrixf *matrixfc_abs(matrixfc *mat);
 extern float vectorf_dot_asm(float *v1, float *v2, unsigned int length);
 extern void vectorf_mul_r_asm(float *v1, float *v2, unsigned int length);
 extern void vectorf_smul_r_asm(float *vec, float scalar, unsigned int length);
-extern fcomplex vectorfc_dot_asm(fcomplex *v1, fcomplex *v2, unsigned int length);
-extern float vectorfc_abs_asm(fcomplex *vec, unsigned int length);
+extern float vectorf_norm_asm(float *vec, unsigned int length);
 
 #endif /* __MATRIX_H__ */
