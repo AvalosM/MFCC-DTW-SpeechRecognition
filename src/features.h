@@ -28,4 +28,6 @@ void mfcc_init(unsigned int samplerate, unsigned int lower_freq, unsigned int up
  */
 matrixf *mfcc(matrixfc *frames, matrixf *filterbank);
 
+matrixfc *frame(float *signal, unsigned int signal_length, unsigned int samplerate);
+
 #endif /* __FEATURES_H__ */
