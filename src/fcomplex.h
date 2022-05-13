@@ -23,4 +23,6 @@ float fcabs(fcomplex x);
  */
 extern fcomplex fcmul_pair_asm(fcomplex x, fcomplex y);
 
+extern float fcabs_pair_asm(fcomplex x);
+
 #endif /* __FCOMPLEX_H__ */

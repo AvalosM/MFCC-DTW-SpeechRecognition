@@ -25,5 +25,13 @@ fcomplex fcsub(fcomplex x, fcomplex y)
 
 float fcabs(fcomplex x)
 {
+    #ifdef __FCOMPLEX_SSE__
+
+    return fcabs_pair_asm(x);
+
+    #else
+
     return (float)sqrtf(powf(x.real, 2) + powf(x.imag, 2));
+
+    #endif
 }

@@ -18,3 +18,12 @@ fcmul_pair_asm:
 
     movaps xmm0, xmm2  
     ret
+
+global fcabs_pair_asm
+; Absolute value of a pair of complex numbers
+; float fcabs_pair_asm(fcomplex[2]x(xmm0))
+fcabs_pair_asm:
+                      ; xmm0 = | x1.im              | x1.re             | x0.im             | x0.re             |
+    mulps xmm0, xmm0  ; xmm0 = | x1.im^2            | x1.re^2           | x0.im^2           | x0.re^2           |
+    haddps xmm0, xmm0 ; xmm0 = | ...                | ...               | x1.im^2 + x1.re^2 | x0.im^2 + x0.re^2 |
+    sqrtps xmm0, xmm0 ; xmm0 = | ...                | ...               | abs(x1)           | abs(x0)           |
