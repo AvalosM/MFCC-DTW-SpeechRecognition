@@ -56,6 +56,10 @@ $(BUILD_DIR)/%.asm.o: $(SRC_DIR)/%.asm
 
 all: $(TARGET)
 
+debug: CFLAGS += -g
+debug: ASFLAGS += -g
+debug: $(TARGET)
+
 test: CFLAGS += -g
 test: ASFLAGS += -g
 test: $(TEST)
