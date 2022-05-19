@@ -78,3 +78,19 @@ void savesignalc(char *file_path, fcomplex *signal, unsigned int signal_len)
     }
     fclose(f);
 }
+
+void savematrixf(char *file_path, matrixf *mat)
+{
+    FILE *f = fopen(file_path, "w");
+    if (f == NULL) {
+        printf("Error opening file");
+        exit(1);
+    }
+    for (unsigned int i = 0; i < mat->rows; i++) {
+        for (unsigned int j = 0; j < mat->cols; j++) {
+            fprintf(f, "%.6f,", (double)*matrixf_at(mat, i, j));
+        }
+        fprintf(f, "\n");
+    }
+    fclose(f);
+}

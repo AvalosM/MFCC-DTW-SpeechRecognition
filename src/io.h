@@ -3,8 +3,8 @@
 
 #include <stdlib.h>
 #include <sndfile.h>
-#include <math.h>
 #include "fcomplex.h"
+#include "matrix.h"
 
 /**
  * @brief Reads wav file specified by file_path and returns a heap allocated array containing audio signal. 
@@ -42,5 +42,13 @@ void savesignalf(char *file_path, float *signal, unsigned int signal_len);
  * @param signal_len
  */
 void savesignalc(char *file_path, fcomplex *signal, unsigned int signal_len);
+
+/**
+ * @brief Writes float matrix to file specifies by file_path
+ * 
+ * @param file_path 
+ * @param mat 
+ */
+void savematrixf(char *file_path, matrixf *mat);
 
 #endif /* __IO_H__ */
