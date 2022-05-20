@@ -1,10 +1,8 @@
 CC	   := gcc
 CFLAGS := -Wall -Wextra -pedantic -Wshadow -Wdouble-promotion
-LIBS   := -lsndfile -lm
-LFLAGS := -no-pie
-
 AS		:= nasm
 ASFLAGS	:= -f elf64 -F DWARF -Wall
+LFLAGS := -lsndfile -lm -no-pie
 
 BUILD_DIR := ./build
 SRC_DIR   := ./src
@@ -28,16 +26,16 @@ TEST_OBJS  := $(TEST_SRCS:./src/testing/%.c=./build/testing/%.c.o)
 BENCH_OBJS := $(BENCH_SRCS:./src/benchmark/%.c=./build/benchmark/%.c.o)
 
 #----------------TARGET LINK------------------#
-$(TARGET): msg_building $(OBJS) $(BUILD_DIR)/main.c.o msg_linking
+$(TARGET): $(OBJS) $(BUILD_DIR)/main.c.o
 	$(CC) $(CFLAGS) $(OBJS) $(BUILD_DIR)/main.c.o $(LIBS) $(LFLAGS) -o $@
 
 #----------------TEST LINK--------------------#
 # Link
-$(TEST): msg_building msg_test $(TEST_OBJS) $(OBJS) msg_linking
+$(TEST): $(TEST_OBJS) $(OBJS)
 	$(CC) $(CFLAGS) $(TEST_OBJS) $(OBJS) $(LIBS) $(LFLAGS) -o $@
 
 #----------------BENCHMARK LINK---------------#
-$(BENCH): msg_building msg_bench $(BENCH_OBJS) $(OBJS) msg_linking
+$(BENCH): $(BENCH_OBJS) $(OBJS)
 	$(CC) $(CFLAGS) $(BENCH_OBJS) $(OBJS) $(LIBS) $(LFLAGS) -o $@
 
 # Compile C
@@ -50,15 +48,11 @@ $(BUILD_DIR)/%.asm.o: $(SRC_DIR)/%.asm
 	@mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) $< -o $@
 
-.PHONY: all clean test bench msg_building msg_test msg_bench msg_linking
+.PHONY: all clean test bench
 
 .DEFAULT_GOAL := all
 
 all: $(TARGET)
-
-debug: CFLAGS += -g
-debug: ASFLAGS += -g
-debug: $(TARGET)
 
 test: CFLAGS += -g
 test: ASFLAGS += -g
@@ -74,16 +68,3 @@ clean:
 	rm -f $(TARGET)
 	rm -f $(TEST)
 	rm -f $(BENCH)
-
-msg_building:
-	@echo Building...
-	@echo Sources are: $(SRCS)
-
-msg_test:
-	@echo Test sources are: $(TEST_SRCS)
-
-msg_bench:
-	@echo Benchmark sources are: $(BENCH_SRCS)
-
-msg_linking:
-	@echo Linking...
