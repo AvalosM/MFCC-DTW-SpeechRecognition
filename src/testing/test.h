@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TEST_RES_DIR(string) "./res/tests/" string
+#define TEST_RES_DIR(string) "./results/tests/" string
 
 #define COLOR_RESET          "\x1b[0m"
 #define YELLOW(string)       "\x1b[33m" string COLOR_RESET
@@ -43,5 +43,6 @@ void testpass();
 /* Test suites */
 void matrix_testsuite();
 void fft_testsuite();
+void features_testsuite();
 
 #endif /* __TEST_H__ */

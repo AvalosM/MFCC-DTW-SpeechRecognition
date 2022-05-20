@@ -42,7 +42,7 @@ void matrix_matrixf_dot_fast()
     matrixf *result;
     for (unsigned int m2_ncols = 1; m2_ncols < 4; m2_ncols++) {
         m2->cols = m2_ncols;
-        result = matrixf_dot_fast(m1, m2);
+        result = matrixf_dot_fast(m1, m2, ROW_MAJOR);
             ASSERT(result->rows == 3);
             ASSERT(result->cols == m2_ncols);
             for (unsigned int i = 0; i < result->rows; i++) {

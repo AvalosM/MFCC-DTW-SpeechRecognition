@@ -29,4 +29,5 @@ int main(void)
 {
     matrix_testsuite();
     fft_testsuite();
+    features_testsuite();
 }
