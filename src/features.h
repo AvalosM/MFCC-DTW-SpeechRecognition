@@ -14,20 +14,11 @@
 
 #define FEATURE_NUM 12
 
-void mfcc_init(unsigned int samplerate, unsigned int lower_freq, unsigned int upper_freq);
 
-/**
- * @brief Calculate MFCC feature vector of a single frame
- * 
- * Values for frame and workspace are not preserved
- * 
- * @param frame 
- * @param workspace 
- * @param frame_length 
- * @param fbank 
- */
-matrixf *mfcc(matrixfc *frames, matrixf *filterbank);
+matrixf *mfcc(float *signal, unsigned int signal_length, unsigned int samplerate);
 
 matrixfc *frame(float *signal, unsigned int signal_length, unsigned int samplerate);
+
+matrixf *melspectogram(float *signal, unsigned int signal_length, unsigned int samplerate);
 
 #endif /* __FEATURES_H__ */
