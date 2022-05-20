@@ -46,13 +46,13 @@ float *matrixf_at(matrixf *mat, unsigned int row, unsigned int col)
     return mat->order == ROW_MAJOR ? mat->data + (row * mat->cols + col) : mat->data + (col * mat->rows + row); 
 }
 
-matrixf *matrixf_dot_fast(matrixf *m1, matrixf *m2)
+matrixf *matrixf_dot_fast(matrixf *m1, matrixf *m2, unsigned int order)
 {
     /* Check dimensions and order match */
     if (m1->cols != m2->rows || m1->order == COL_MAJOR || m2->order == ROW_MAJOR) {
         exit(-1);
     }
-    matrixf *res = matrixf_new(m1->rows, m2->cols, ROW_MAJOR);
+    matrixf *res = matrixf_new(m1->rows, m2->cols, order);
 
     for (unsigned int i = 0; i < m1->rows; i++) {
         float *m1_row_i = matrixf_at(m1, i, 0);

@@ -36,7 +36,7 @@ float *matrixf_at(matrixf *mat, unsigned int row, unsigned int col);
  * @param m2 Column-major float matrix
  * @return matrixf* 
  */
-matrixf *matrixf_dot_fast(matrixf *m1, matrixf *m2);
+matrixf *matrixf_dot_fast(matrixf *m1, matrixf *m2, unsigned int order);
 
 /**
  * @brief Entrywise matrix multiplication
