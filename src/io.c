@@ -87,10 +87,10 @@ void savematrixf(char *file_path, matrixf *mat)
         exit(1);
     }
     for (unsigned int i = 0; i < mat->rows; i++) {
-        for (unsigned int j = 0; j < mat->cols; j++) {
+        for (unsigned int j = 0; j < mat->cols - 1; j++) {
             fprintf(f, "%.6f,", (double)*matrixf_at(mat, i, j));
         }
-        fprintf(f, "\n");
+        fprintf(f, "%.6f\n", (double)*matrixf_at(mat, i, mat->cols - 1));
     }
     fclose(f);
 }
