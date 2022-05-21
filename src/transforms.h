@@ -1,6 +1,7 @@
 #ifndef __TRANSFORMS_H__
 #define __TRANSFORMS_H__
 
+#include "config.h"
 #include <stdlib.h>
 #include <math.h>
 #include "fcomplex.h"

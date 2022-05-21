@@ -1,6 +1,7 @@
 #ifndef __FCOMPLEX_H__
 #define __FCOMPLEX_H__
 
+#include "config.h"
 #include <math.h>
 
 typedef struct fcomplex 
@@ -16,13 +17,5 @@ fcomplex fcadd(fcomplex x, fcomplex y);
 fcomplex fcsub(fcomplex x, fcomplex y);
 
 float fcabs(fcomplex x);
-
-/**
- * Multiply two pairs of complex numbers (ASM/SSE implementation)
- * Reference: Intel® 64 and IA-32 Architectures Optimization Reference Manual
- */
-extern fcomplex fcmul_pair_asm(fcomplex x, fcomplex y);
-
-extern float fcabs_pair_asm(fcomplex x);
 
 #endif /* __FCOMPLEX_H__ */
