@@ -24,13 +24,13 @@ float *hammingwindow(unsigned int length)
 
 /* http://practicalcryptography.com/miscellaneous/machine-learning/guide-mel-frequency-cepstral-coefficients-mfccs/#eqn1 */
 /* M(f) = 1125 ln(1 + f/700) freq -> mel */
-float mel(float freq)
+float hz2mel(float freq)
 {
     return 1125 * logf(1 + (freq / 700));
 }
 
 /* M^-1(m) = 700(exp(m/1125) - 1) mel -> freq */
-float imel(float mel)
+float mel2hz(float mel)
 {
     return 700 * (expf(mel / 1125) - 1);
 }
@@ -38,8 +38,8 @@ float imel(float mel)
 matrixf *melfilterbank(float lower_freq, float upper_freq, unsigned int samplerate, unsigned int fft_size)
 {
     /* Convert lower and upper bounds to Mel scale */
-    float lower_freq_mel = mel(lower_freq);
-    float upper_freq_mel = mel(upper_freq);
+    float lower_freq_mel = hz2mel(lower_freq);
+    float upper_freq_mel = hz2mel(upper_freq);
     float step_freq_mel = (upper_freq_mel - lower_freq_mel) / (MEL_FILTER_NUM + 1);
 
     /* Linearly spaced (in Mel scale) filter centre-frequencies */
@@ -50,7 +50,7 @@ matrixf *melfilterbank(float lower_freq, float upper_freq, unsigned int samplera
 
     /* Round to nearest fft frequency bin */
     for (unsigned int i = 0; i < MEL_FILTER_NUM + 2; i++) {
-        fft_bins[i] = floorf((fft_size + 1) * imel(fft_bins[i]) / samplerate);
+        fft_bins[i] = floorf((fft_size + 1) * mel2hz(fft_bins[i]) / samplerate);
     }
 
     /* Create filterbank */
