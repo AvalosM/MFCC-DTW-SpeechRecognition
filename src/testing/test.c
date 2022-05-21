@@ -27,7 +27,9 @@ void testpass()
 
 int main(void)
 {
+    vector_testuite();
     matrix_testsuite();
     fft_testsuite();
     features_testsuite();
+    dtw_testsuite();
 }

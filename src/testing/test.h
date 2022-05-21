@@ -41,8 +41,10 @@ void testfail();
 void testpass();
 
 /* Test suites */
+void vector_testuite();
 void matrix_testsuite();
 void fft_testsuite();
 void features_testsuite();
+void dtw_testsuite();
 
 #endif /* __TEST_H__ */
