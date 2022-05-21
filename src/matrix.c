@@ -1,4 +1,5 @@
 #include "matrix.h"
+#include "vector.h"
 #include <stdlib.h>
 
 /** 

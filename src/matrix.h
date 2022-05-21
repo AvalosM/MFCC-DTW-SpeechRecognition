@@ -1,8 +1,8 @@
 #ifndef __MATRIX_H__
 #define __MATRIX_H__
 
+#include "config.h"
 #include "fcomplex.h"
-// #define __MATRIX_SSE__
 
 #define ROW_MAJOR 1
 #define COL_MAJOR 0
@@ -28,7 +28,7 @@ float *matrixf_at(matrixf *mat, unsigned int row, unsigned int col);
 /**
  * @brief Float matrix fast dot product
  * 
- * Requires m1 to be row-major and m2 column-major
+ * Requires m1 to be row-major and m2 column-major.
  * Rows in m1 and columns in m2 being contiguous in memory allows for faster computation
  * Allocates matrix user should free
  * 
@@ -83,14 +83,5 @@ fcomplex *matrixfc_at(matrixfc *mat, unsigned int row, unsigned int col);
  * @return matrixf* Pointer to float matrix containing absolute values 
  */
 matrixf *matrixfc_abs(matrixfc *mat);
-
-
-/* 
- * ASM/SSE implementations
- */
-extern float vectorf_dot_asm(float *v1, float *v2, unsigned int length);
-extern void vectorf_mul_r_asm(float *v1, float *v2, unsigned int length);
-extern void vectorf_smul_r_asm(float *vec, float scalar, unsigned int length);
-extern float vectorf_norm_asm(float *vec, unsigned int length);
 
 #endif /* __MATRIX_H__ */
