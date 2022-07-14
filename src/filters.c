@@ -54,10 +54,11 @@ matrixf *melfilterbank(float lower_freq, float upper_freq, unsigned int samplera
     }
 
     /* Create filterbank */
-    matrixf *filterbank = matrixf_new(fft_size, MEL_FILTER_NUM, COL_MAJOR);
+    unsigned int filter_length = fft_size / 2 + 1;
+    matrixf *filterbank = matrixf_new(filter_length, MEL_FILTER_NUM, COL_MAJOR);
     for (unsigned int m = 1; m < MEL_FILTER_NUM + 1; m++) {
         float *filter_m = matrixf_at(filterbank, 0, m - 1);
-        for (unsigned int k = 0; k < fft_size; k++) {
+        for (unsigned int k = 0; k < filter_length; k++) {
             if (k < fft_bins[m - 1]) {
                 filter_m[k] = 0;
             } else if (k <= fft_bins[m]) {

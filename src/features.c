@@ -30,13 +30,11 @@ matrixfc *frame(float *signal, unsigned int signal_length, unsigned int samplera
     }
 
     free(window);
-
     return frames;
 }
 
 matrixf *melspectogram(float *signal, unsigned int signal_length, unsigned int samplerate)
 {
-    preemphasis(signal, signal_length);
     matrixfc *frames = frame(signal, signal_length, samplerate);
     matrixf *filterbank = melfilterbank(MEL_LOWER_FREQ, samplerate / 2, samplerate, frames->cols);
 
@@ -46,36 +44,37 @@ matrixf *melspectogram(float *signal, unsigned int signal_length, unsigned int s
         exit(-1);
     }
     /* Apply FFT to each frame */
+    unsigned int fft_size = frames->cols;
     for (unsigned int i = 0; i < frames->rows; i++) {
         fcomplex *frames_row_i = matrixfc_at(frames, i, 0);
-        fft(frames_row_i, workspace, frames->cols);
+        fft(frames_row_i, workspace, fft_size);
     }
-    
-    /* Power spectrum of each FFT(frame), |FFT(x_i)|^2 / N */
-    matrixf *power_spectrums = matrixfc_abs(frames);          /* |FFT(frame_i)| */
-    matrixf_mul_r(power_spectrums, power_spectrums);          /* |FFT(frame_i)|^2 */
-    matrixf_smul_r(power_spectrums, (float)1 / frames->cols); /* |FFT(frame_i)|^2 / N|*/
+    /* Keep positive half + 1 of each FFT */
+    matrixfc_reshape(frames, frames->rows, fft_size / 2 + 1);
 
-    matrixf *spectogram = matrixf_dot_fast(power_spectrums, filterbank, ROW_MAJOR);
+    /* Periodogram estimate of the power spectrum */
+    matrixf *power_spectrums = matrixfc_abs(frames);      /* |FFT(frame_i)| */
+    matrixf_mul_r(power_spectrums, power_spectrums);      /* |FFT(frame_i)|^2 */
+    matrixf_smul_r(power_spectrums, (float)1 / fft_size); /* |FFT(frame_i)|^2 / N|*/
+
+    /* Multiply each power spectrum by filterbank to get spectogram */
+    matrixf *spectrogram = matrixf_dot_fast(power_spectrums, filterbank, ROW_MAJOR);
+
     /* Take the log of each value */
-    for (unsigned int i = 0; i < spectogram->rows; i++) {
-        for (unsigned int j = 0; j < spectogram->cols; j++) {
-            float value = *matrixf_at(spectogram, i, j);
-            if (value == 0) value = FLT_MIN; /* Avoid ln(0) */
-            *matrixf_at(spectogram, i, j) = floorf(logf(*matrixf_at(spectogram, i, j)));
-        }
+    for (unsigned int i = 0; i < spectrogram->rows * spectrogram->cols; i++) {
+        float value = spectrogram->data[i];
+        if (value == 0) value = FLT_MIN; /* Avoid ln(0) */
+        spectrogram->data[i] = floorf(logf(value));
     }
 
     /* Cleanup */
     free(workspace);
     matrixfc_free(frames);
     matrixf_free(filterbank);
-    
     matrixf_free(power_spectrums);
 
-    return spectogram;
+    return spectrogram;
 }
-
 
 matrixf *mfcc(float *signal, unsigned int signal_length, unsigned int samplerate)
 {
@@ -93,11 +92,12 @@ matrixf *mfcc(float *signal, unsigned int signal_length, unsigned int samplerate
         float *spectogram_row_i = matrixf_at(spectogram, i, 0);
         fct(spectogram_row_i, spectogram->cols);
         /* Copy values */
-        for (unsigned int j = 1; j < MFCC_FEATURE_NUM + 1; j++) {
-            *matrixf_at(mfcc_matrix, i, j-1) = spectogram_row_i[j] * lifter[j-1];
+        for (unsigned int j = 0; j < MFCC_FEATURE_NUM; j++) {
+            *matrixf_at(mfcc_matrix, i, j) = spectogram_row_i[j] * lifter[j];
         }
     }
-    // free(lift);
+
+    free(lifter);
     matrixf_free(spectogram);
     return mfcc_matrix;
 }

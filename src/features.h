@@ -12,7 +12,7 @@
 
 #define MFCC_FEATURE_NUM 12
 #define MFCC_FIRST_FEATURE 2
-#define CEP_LIFTER 22
+#define CEP_LIFTER 10
 
 #define FEATURE_NUM 12
 
