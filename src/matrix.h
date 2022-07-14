@@ -34,7 +34,7 @@ float *matrixf_at(matrixf *mat, unsigned int row, unsigned int col);
  * 
  * @param m1 Row-major float matrix
  * @param m2 Column-major float matrix
- * @return matrixf* 
+ * @return matrixf*
  */
 matrixf *matrixf_dot_fast(matrixf *m1, matrixf *m2, unsigned int order);
 
@@ -49,7 +49,7 @@ matrixf *matrixf_dot_fast(matrixf *m1, matrixf *m2, unsigned int order);
 void matrixf_mul_r(matrixf *m1, matrixf *m2);
 
 /**
- * @brief Matrix multiplication by scalar
+ * @brief In place Matrix multiplication by scalar
  * 
  * @param mat
  * @param scalar 
@@ -57,6 +57,8 @@ void matrixf_mul_r(matrixf *m1, matrixf *m2);
 void matrixf_smul_r(matrixf *mat, float scalar);
 
 float vectorf_dist(float *v1, float *v2, unsigned int length);
+
+void matrixf_print(matrixf *mat);
 
 /**
  * fcomplex matrix
@@ -72,7 +74,11 @@ matrixfc *matrixfc_new(unsigned int n_rows, unsigned int n_cols, int order);
 
 void matrixfc_free(matrixfc *mat);
 
+void matrixfc_set(matrixfc *mat, fcomplex value);
+
 fcomplex *matrixfc_at(matrixfc *mat, unsigned int row, unsigned int col);
+
+void matrixfc_reshape(matrixfc *mat, unsigned int rows, unsigned int cols);
 
 /**
  * @brief Entrywise absolute value of an fcomplex matrix
@@ -83,5 +89,7 @@ fcomplex *matrixfc_at(matrixfc *mat, unsigned int row, unsigned int col);
  * @return matrixf* Pointer to float matrix containing absolute values 
  */
 matrixf *matrixfc_abs(matrixfc *mat);
+
+void matrixfc_print(matrixfc *mat);
 
 #endif /* __MATRIX_H__ */

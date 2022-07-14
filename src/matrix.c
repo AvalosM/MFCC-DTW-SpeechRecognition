@@ -1,6 +1,8 @@
 #include "matrix.h"
 #include "vector.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 /** 
  * Float Matrix
@@ -130,6 +132,17 @@ float vectorf_dist(float *v1, float *v2, unsigned int length)
     return sqrtf(sum);
 }
 
+void matrixf_print(matrixf *mat)
+{
+    for (unsigned int i = 0; i < mat->rows; i++) {
+        printf("|");
+        for (unsigned int j = 0; j < mat->cols; j++) {
+            printf(" %.0f ", *matrixf_at(mat, i, j));
+        }
+        printf("|\n");
+    }
+}
+
 /**
  * Float complex matrix 
  */
@@ -165,6 +178,31 @@ fcomplex *matrixfc_at(matrixfc *mat, unsigned int row, unsigned int col)
     return mat->order == ROW_MAJOR ? mat->data + (row * mat->cols + col) : mat->data + (col * mat->rows + row);   
 }
 
+void matrixfc_reshape(matrixfc *mat, unsigned int rows, unsigned int cols)
+{
+    /* Check new shape is within bounds*/
+    if (rows > mat->rows || cols > mat->cols) {
+        exit(-1);
+    }
+    if (mat->order == ROW_MAJOR) {
+        for (unsigned int i = 0; i < rows; i++) {
+            fcomplex *row_i = matrixfc_at(mat, i, 0);
+            memmove(mat->data + (i * cols), row_i, sizeof(fcomplex) * cols);
+        }
+    } else {
+        for (unsigned int j = 0; j < cols; j++) {
+            fcomplex *col_i = matrixfc_at(mat, j, 0);
+            memmove(mat->data + (j * rows), col_i, sizeof(fcomplex) * rows);
+        }
+    }
+
+    fcomplex *data_r = realloc(mat->data, sizeof(fcomplex) * rows * cols);
+    if(data_r) mat->data = data_r;
+
+    mat->rows = rows;
+    mat->cols = cols;
+}
+
 matrixf *matrixfc_abs(matrixfc *mat)
 {
     matrixf *res = matrixf_new(mat->rows, mat->cols, ROW_MAJOR);
@@ -177,4 +215,16 @@ matrixf *matrixfc_abs(matrixfc *mat)
         }
     }
     return res;
+}
+
+void matrixfc_print(matrixfc *mat)
+{
+    for (unsigned int i = 0; i < mat->rows; i++) {
+        printf("|");
+        for (unsigned int j = 0; j < mat->cols; j++) {
+            fcomplex curr_entry = *matrixfc_at(mat, i, j);
+            printf("(%.0f,%.0f)", curr_entry.real, curr_entry.imag);
+        }
+        printf("|\n");
+    }
 }
