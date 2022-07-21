@@ -1,6 +1,7 @@
 #include "transforms.h"
 
 fcomplex twiddle[TWIDDLE_TABLE_SIZE];
+static int twiddle_initialized = 0;
 
 void twiddle_init()
 {
@@ -44,16 +45,20 @@ void fftstockham(fcomplex *x, fcomplex *workspace, unsigned int N)
     }
 }
 
-extern void fftstockham_asm(fcomplex *x, fcomplex *workspace, unsigned int N);
+extern void fftstockham_asm(fcomplex *x, fcomplex *workspace, unsigned int N, fcomplex *twiddle);
 
 void fft(fcomplex *x, fcomplex *workspace, unsigned int N)
 {
+    if (twiddle_initialized == 0) {
+        twiddle_init();
+        twiddle_initialized = 1;
+    }
+
     #ifdef __FFT_SSE__
-        fftstockham_asm(x, workspace, N);
+        fftstockham_asm(x, workspace, N, twiddle);
     #else
         fftstockham(x, workspace, N);
     #endif
-
 }
 
 /* Naive Discrete cosine transform II implementation */

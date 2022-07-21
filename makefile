@@ -1,42 +1,26 @@
-CC	   := gcc
-CFLAGS := -Wall -Wextra -pedantic -Wshadow -Wdouble-promotion
-AS		:= nasm
-ASFLAGS	:= -f elf64 -F DWARF -Wall
-LFLAGS := -lsndfile -lm -no-pie
+CC      := gcc
+CFLAGS  := -Wall -Wextra -pedantic -Wdouble-promotion -fPIC
+AS      := nasm
+ASFLAGS := -f elf64 -F DWARF -Wall
+LIBS    := -lsndfile -lm
 
-BUILD_DIR := ./build
 SRC_DIR   := ./src
-TEST_DIR  := ./src/testing
-BENCH_DIR := ./src/benchmark
+BUILD_DIR := ./build
 
-TARGET := $(BUILD_DIR)/speechr
-TEST   := $(BUILD_DIR)/testing/test
-BENCH  := $(BUILD_DIR)/benchmark/bench
+LIB  := $(BUILD_DIR)/libspeechr.so
+TEST := $(BUILD_DIR)/test
 
-# Find all the source files needed to build
-SRCS       := $(shell find $(SRC_DIR) -maxdepth 1 ! -name "main.c" -name "*.c" -or -name "*.asm")
+# Source files
+C_SRCS      := $(wildcard $(SRC_DIR)/*.c)
+C_TEST_SRCS := $(wildcard $(SRC_DIR)/testing/*.c)
+ASM_SRCS := $(wildcard $(SRC_DIR)/*.asm)
 
-TEST_SRCS  := $(shell find $(TEST_DIR) -name *.c)
+# Header files
+C_HEADERS := $(wildcard $(SRC_DIR)/*.h)
 
-BENCH_SRCS := $(shell find $(BENCH_DIR) -name *.c)
-
-# Object files
-OBJS	   := $(SRCS:$(SRC_DIR)/%=$(BUILD_DIR)/%.o)
-TEST_OBJS  := $(TEST_SRCS:./src/testing/%.c=./build/testing/%.c.o)
-BENCH_OBJS := $(BENCH_SRCS:./src/benchmark/%.c=./build/benchmark/%.c.o)
-
-#----------------TARGET LINK------------------#
-$(TARGET): $(OBJS) $(BUILD_DIR)/main.c.o
-	$(CC) $(CFLAGS) $(OBJS) $(BUILD_DIR)/main.c.o $(LIBS) $(LFLAGS) -o $@
-
-#----------------TEST LINK--------------------#
-# Link
-$(TEST): $(TEST_OBJS) $(OBJS)
-	$(CC) $(CFLAGS) $(TEST_OBJS) $(OBJS) $(LIBS) $(LFLAGS) -o $@
-
-#----------------BENCHMARK LINK---------------#
-$(BENCH): $(BENCH_OBJS) $(OBJS)
-	$(CC) $(CFLAGS) $(BENCH_OBJS) $(OBJS) $(LIBS) $(LFLAGS) -o $@
+# Object Files
+C_OBJS      := $(C_SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.c.o)
+ASM_OBJS    := $(ASM_SRCS:$(SRC_DIR)/%.asm=$(BUILD_DIR)/%.asm.o)
 
 # Compile C
 $(BUILD_DIR)/%.c.o: $(SRC_DIR)/%.c
@@ -48,23 +32,30 @@ $(BUILD_DIR)/%.asm.o: $(SRC_DIR)/%.asm
 	@mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) $< -o $@
 
-.PHONY: all clean test bench
+# Compile Dynamic Library
+$(LIB): $(C_OBJS) $(ASM_OBJS)
+	@mkdir -p $(dir $@)	
+	$(CC) $(CFLAGS) -fPIC -shared $^ $(LIBS) -o $@
 
-.DEFAULT_GOAL := all
+# Test link
+$(TEST): $(C_TEST_SRCS) $(LIB)
+	$(CC) $(CFLAGS) -o $@ $^ -L./build -lspeechr $(LIBS)
 
-all: $(TARGET)
+
+.PHONY: lib test install clean
+.DEFAULT_GOAL := lib
+
+lib: $(LIB)
+
+install: lib
+	@cp $(LIB) ./notebooks/
 
 test: CFLAGS += -g
 test: ASFLAGS += -g
 test: $(TEST)
 
-bench: CFLAGS += -g
-bench: ASFLAGS += -g
-bench: $(BENCH)
-
 # Remove build directory and executables
 clean:
 	rm -rf $(BUILD_DIR)
-	rm -f $(TARGET)
+	rm -f $(LIB)
 	rm -f $(TEST)
-	rm -f $(BENCH)

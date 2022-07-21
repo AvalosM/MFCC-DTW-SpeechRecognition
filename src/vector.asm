@@ -1,5 +1,4 @@
 section .data
-extern fcmul_pair_asm
 %define FCOMPLEX_LENGTH 8
 %define FLOAT_LENGTH 4
 
@@ -47,7 +46,7 @@ vectorf_dot_asm:
     
     movd xmm1, DWORD[x + i * FLOAT_LENGTH] ; xmm1 = | ... | ... | ... | v1[i]               |
     movd xmm2, DWORD[y + i * FLOAT_LENGTH] ; xmm2 = | ... | ... | ... | v2[i]               |
-    mulps xmm1, xmm2                       ; xmm1 = | ... | ... | ... | v2[i]               |
+    mulps xmm1, xmm2                       ; xmm1 = | ... | ... | ... | v1 * v2[i]          |
     addps sum, xmm1                        ; xmm0 = | ... | ... | ... | sum + v1[i] * v2[i] |
 
     add i, 1

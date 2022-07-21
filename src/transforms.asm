@@ -1,6 +1,5 @@
 section .data
 
-extern twiddle
 extern fcmul_pair_asm
 %define TWIDDLE_SIZE 1024
 %define FCOMPLEX_LENGTH 8
@@ -8,7 +7,7 @@ extern fcmul_pair_asm
 section .text
 
 global fftstockham_asm
-; void stockhamfft_asm(fcomplex *x(rdi), fcomplex *y(rsi), unsigned int N(rdx))             
+; void stockhamfft_asm(fcomplex *x(rdi), fcomplex *y(rsi), unsigned int N(rdx), fcomplex *twiddle(rcx))             
 fftstockham_asm:
     ; ----------------
     ; ----Prologue----
@@ -25,7 +24,9 @@ fftstockham_asm:
     %define x rdi
     %define y rsi
     %define N r8
+    %define twiddle rbx
     mov N, rdx
+    mov twiddle, rcx
 
     %define y_ini r9
     mov y_ini, y
@@ -35,22 +36,18 @@ fftstockham_asm:
     .Lloop: ; for (L = 2; L <= N; L <<= 1)
 
     xchg x, y ; Swap pointers
-    
     %define Ls r11
     mov Ls, L
     shr Ls, 1
-
     %define r r12
     mov rax, N
     xor rdx, rdx
     div L
     mov r, rax
-
     %define rs r13
     mov rax, N
     div Ls
     mov rs, rax
-
     %define j r14
     mov j, 0
     .jloop: ; for (j = 0; j < Ls; j++)
@@ -76,9 +73,21 @@ fftstockham_asm:
     shl rax, 3 ; rax = (j * rs + k + r) * sizeof(fcomplex) = (j * 2 + 1) * sizeof(fcomplex)
 
     %define t xmm0   
-    movlps t, QWORD [y + rax]  ; xmm0 = | ... | y[rax]     |
-    movaps xmm1, w             ; xmm1 = | ... | w          | 
-    call fcmul_pair_asm        ; xmm1 = | ... | w * y[rax] |
+    movlps t, QWORD [y + rax]         ; xmm0 = | ... | y[rax]     |
+    movaps xmm1, w                    ; xmm1 = | ... | w          |
+    push rax
+    push rdx
+    push r8
+    push r9
+    push r10
+    push r11
+    call fcmul_pair_asm wrt ..plt     ; xmm0 = | ... | w * y[rax] |
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rdx
+    pop rax
 
     sub rax, FCOMPLEX_LENGTH ; rax = (j * rs + k) * sizeof(fcomplex) = (j * 2) * sizeof(fcomplex)
 
@@ -108,9 +117,23 @@ fftstockham_asm:
     add rax, r
     shl rax, 3 ; rax = (j * rs + k + r) * sizeof(fcomplex)
 
-    movups t, OWORD [y + rax] ; xmm0 = | y[rax + 1]    | y[rax]     |  
-    movaps xmm1, w            ; xmm1 = | w             | w          | 
-    call fcmul_pair_asm       ; xmm0 = |w * y[rax + 1] | w * y[rax] |
+    movups t, OWORD [y + rax]        ; xmm0 = | y[rax + 1]    | y[rax]     |  
+    movaps xmm1, w                   ; xmm1 = | w             | w          |
+    
+    ; Preserve used volatile registers
+    push rax
+    push rdx
+    push r8
+    push r9
+    push r10
+    push r11
+    call fcmul_pair_asm wrt ..plt    ; xmm0 = |w * y[rax + 1] | w * y[rax] |
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rdx
+    pop rax
 
     mov rax, j
     mul rs
@@ -171,11 +194,11 @@ fftstockham_asm:
     ; ----Epilogue----
     ; ----------------
     .end:
-    pop rbx
-    pop r12
-    pop r13
-    pop r14
     pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbx
 
     ret
 
