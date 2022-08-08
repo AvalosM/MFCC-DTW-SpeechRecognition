@@ -30,6 +30,8 @@
         exit(1); \
     }
 
+#define EPSILON (float)0.000001
+
 void assertfail(char *file, int line);
 
 void suiteinit(char *suite_name);
@@ -41,10 +43,10 @@ void testfail();
 void testpass();
 
 /* Test suites */
+void fcomplex_testsuite();
 void vector_testuite();
 void matrix_testsuite();
 void fft_testsuite();
 void features_testsuite();
-void dtw_testsuite();
 
 #endif /* __TEST_H__ */

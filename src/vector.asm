@@ -3,204 +3,239 @@ section .data
 %define FLOAT_LENGTH 4
 
 section .text
+extern fcmul_pair_asm
+extern fcmul_4_asm
 
 ;-------------------------------------------------------------------------------
 ; Float vector dot product
 ;
 ; C signature:
-; float vectorf_dot_asm(float *v1(rdi), float *v2(rsi), unsigned int length(rdx))
+; void vectorf_mul_asm(float *v1(rdi), float *v2(rsi), unsigned int length(rdx))
 ;-------------------------------------------------------------------------------
 global vectorf_dot_asm
 vectorf_dot_asm:
-    ; ----------------
-    ; ------Body------
-    ; ----------------
-    %define x rdi
-    %define y rsi
-
-    %define length r8
-    mov length, rdx
-    sub length, 3
-
-    %define i rcx
-    mov i, 0
-    
-    %define sum xmm0
-    xorps sum, sum
-
-    .iLoop: ; for (i = 0; i < length; i+=4)
-    cmp i, length
-    jge .checkLast
-
-    movups xmm1, OWORD[x + i * FLOAT_LENGTH] ; xmm1 = | v1[i+3]                 | v1[i+2]                 | v1[i+1]                 | v1[i]               |
-    movups xmm2, OWORD[y + i * FLOAT_LENGTH] ; xmm2 = | v2[i+3]                 | v2[i+2]                 | v2[i+1]                 | v2[i]               |
-    mulps xmm1, xmm2                         ; xmm1 = | v2[i+3]                 | v2[i+2]                 | v2[i+1]                 | v2[i]               |
-    addps sum, xmm1                          ; xmm0 = | sum + v1[i+3] * v2[i+3] | sum + v1[i+2] * v2[i+2] | sum + v1[i+1] * v2[i+1] | sum + v1[i] * v2[i] |
-
-    add i, 4
-    jmp .iLoop
-
-    .checkLast:
-    cmp i, rdx
-    je .end
-    
-    movd xmm1, DWORD[x + i * FLOAT_LENGTH] ; xmm1 = | ... | ... | ... | v1[i]               |
-    movd xmm2, DWORD[y + i * FLOAT_LENGTH] ; xmm2 = | ... | ... | ... | v2[i]               |
-    mulps xmm1, xmm2                       ; xmm1 = | ... | ... | ... | v1 * v2[i]          |
-    addps sum, xmm1                        ; xmm0 = | ... | ... | ... | sum + v1[i] * v2[i] |
-
-    add i, 1
-    jmp .checkLast
-
-    .end:
-    haddps xmm0, xmm0
-    haddps xmm0, xmm0
-
-    ret
-
-;-------------------------------------------------------------------------------
-; Float vector in place entrywise multiplication
-;
-; C signature:
-; void vectorf_mul_r_asm(float *v1(rdi), float *v2(rsi), unsigned int length(rdx))
-;-------------------------------------------------------------------------------
-global vectorf_mul_r_asm
-vectorf_mul_r_asm:
-    ; ----------------
-    ; ------Body------
-    ; ----------------
     %define v1 rdi
     %define v2 rsi
-
-    %define length r8
-    mov length, rdx
-    sub length, 3
-
+    %define length rdx
     %define i rcx
-    mov i, 0
+    %define sum ymm0
 
-    .iLoop: ; for (i = 0; i < length; i+=4)
-    cmp i, length
-    jge .checkLast
+                    xor i, i
+                    vxorps sum, sum
+                    mov rax, 7
+                    cmp rax, length
+                    jge .lessThan8
+                    sub length, 7
 
-    movups xmm0, OWORD[v1 + i * FLOAT_LENGTH] ; xmm0 = | v1[i+3]           | v1[i+2]           | v1[i+1]           | v1[i]         |
-    movups xmm1, OWORD[v2 + i * FLOAT_LENGTH] ; xmm1 = | v2[i+3]           | v2[i+2]           | v2[i+1]           | v2[i]         |
-    mulps xmm0, xmm1                          ; xmm0 = | v1[i+3] * v2[i+3] | v1[i+2] * v2[i+2] | v1[i+1] * v2[i+1] | v1[i] * v2[i] |
-    movups OWORD[v1 + i * FLOAT_LENGTH], xmm0
+    .iLoop:         ; for (i = 0; i < length - 7; i+=8)
+                    vmovups ymm1, YWORD[v1 + i * FLOAT_LENGTH]
+                    vmovups ymm2, YWORD[v2 + i * FLOAT_LENGTH]
+                    vmulps  ymm1, ymm2
+                    vaddps  sum, ymm1
 
-    add i, 4
-    jmp .iLoop
+                    add i, 8
+                    cmp i, length
+                    jl .iLoop
+                    add length, 7
 
-    .checkLast:
-    cmp i, rdx
-    je .end
+    .lessThan8:     cmp i, length ; for (i = i; i < length; i++)
+                    je .end
 
-    movd xmm0, DWORD[v1 + i * FLOAT_LENGTH] ; xmm0 = | ... | ... | ... | v1[i]         |
-    movd xmm1, DWORD[v2 + i * FLOAT_LENGTH] ; xmm1 = | ... | ... | ... | v2[i]         |
-    mulps xmm0, xmm1                        ; xmm0 = | ... | ... | ... | v1[i] * v2[i] |
-    movd DWORD[v1 + i * FLOAT_LENGTH], xmm0
+                    vmovd xmm1, DWORD[v1 + i * FLOAT_LENGTH]
+                    vmovd xmm2, DWORD[v2 + i * FLOAT_LENGTH]
+                    vmulss xmm1, xmm2
+                    vaddps sum, ymm1
 
-    add i, 1
-    jmp .checkLast
+                    add i, 1
+                    jmp .lessThan8
 
-   .end:
-    ret 
+    .end:           vextractf128 xmm1, sum, 0x1
+                    vaddps       xmm0, xmm1, xmm0
+                    vmovshdup    xmm1, xmm0
+                    vaddps       xmm0, xmm1
+                    vmovhlps     xmm1, xmm0
+                    vaddss       xmm0, xmm1
+
+                    ret
+
+; TODO name this :|
+%macro abstraction 2
+    %define v1 rdi
+    %define v2 rsi
+    %define result rdx
+    %define length rcx
+    %define i r8
+                    xor i, i
+                    mov rax, 7
+                    cmp rax, length
+                    jge %%.lessThan8
+                    sub length, 7
+
+    %%.iLoop:         ; for (i = 0; i < length - 7; i+=8)
+                    vmovups ymm0, YWORD[v1 + i * FLOAT_LENGTH]
+                    vmovups ymm1, YWORD[v2 + i * FLOAT_LENGTH]
+                    %1  ymm0, ymm1
+                    vmovups YWORD[result + i * FLOAT_LENGTH], ymm0
+
+                    add i, 8
+                    cmp i, length
+                    jl %%.iLoop
+                    add length, 7
+
+    %%.lessThan8:   cmp i, length ; for (i = i; i < length; i++)
+                    je %%.end
+
+                    vmovd  xmm0, DWORD[v1 + i * FLOAT_LENGTH]
+                    vmovd  xmm1, DWORD[v2 + i * FLOAT_LENGTH]
+                    %2 xmm0, xmm1
+                    vmovd  DWORD[result + i * FLOAT_LENGTH], xmm0
+
+                    add i, 1
+                    jmp %%.lessThan8
+
+    %%.end:           ret
+%endmacro
 
 ;-------------------------------------------------------------------------------
-; Float vector in place multiplication by scalar
+; Float vector entrywise multiplication
 ;
 ; C signature:
-; void vectorf_mul_r_asm(float *vec(rdi), scalar(xmm0), unsigned int length(rsi))
+; void vectorf_mul_asm(float *v1(rdi), float *v2(rsi), float* result(rdx), unsigned int length(rcx))
 ;-------------------------------------------------------------------------------
-global vectorf_smul_r_asm
-vectorf_smul_r_asm:
-    ; ----------------
-    ; ------Body------
-    ; ----------------
+global vectorf_mul_asm
+vectorf_mul_asm:
+    abstraction vmulps, vmulss
+
+;-------------------------------------------------------------------------------
+; Float vector addition
+;
+; C signature:
+; void vectorf_add_asm(float *v1(rdi), float *v2(rsi), float* result(rdx), unsigned int length(rcx))
+;-------------------------------------------------------------------------------
+global vectorf_add_asm
+vectorf_add_asm:
+    abstraction vaddps, vaddss
+
+;-------------------------------------------------------------------------------
+; Float vector subtraction
+;
+; C signature:
+; void vectorf_sub_asm(float *v1(rdi), float *v2(rsi), float* result(rdx), unsigned int length(rcx))
+;-------------------------------------------------------------------------------
+global vectorf_sub_asm
+vectorf_sub_asm:
+    abstraction vsubps, vsubss
+
+;-------------------------------------------------------------------------------
+; Float vector multiplication by scalar
+;
+; C signature:
+; void vectorf_smul_asm(float *vec(rdi), scalar(xmm0), float *result(rsi), unsigned int length(rdx))
+;-------------------------------------------------------------------------------
+global vectorf_smul_asm
+vectorf_smul_asm:
     %define vec rdi
-    %define scalar xmm0
-                               ; xmm0 = | ...    | ...    | ...    | scalar |    
-    shufps scalar, scalar, 0x0 ; xmm0 = | scalar | scalar | scalar | scalar |
-    
-    %define length r8
-    mov length, rsi
-    sub length, 3
-
+    %define result rsi
+    %define length rdx
     %define i rcx
-    mov i, 0
+                    vbroadcastss ymm1, xmm0
+                    xor i, i
+                    mov rax, 7
+                    cmp rax, length
+                    jge .lessThan8
+                    sub length, 7
+    
+    .iLoop:         ; for (i = 0; i < length - 7; i+=8)
+                    vmovups ymm0, YWORD[vec + i * FLOAT_LENGTH]
+                    vmulps  ymm0, ymm1
+                    vmovups YWORD[result + i * FLOAT_LENGTH], ymm0
 
-    .iLoop: ; for (i = 0; i < length; i+=4)
-    cmp i, length
-    jge .checkLast
+                    add i, 8
+                    cmp i, length
+                    jl .iLoop
+                    add length, 7
 
-    movups xmm1, OWORD[vec + i * FLOAT_LENGTH] ; xmm1 = | vec[i+3]         | vec[i+2]          | vec[i+1]          | vec[i]          |
-    mulps xmm1, scalar                         ; xmm1 = | vec[i+3] * scalar| vec[i+2] * scalar | vec[i+1] * scalar | vec[i] * scalar |
-    movups OWORD[vec + i * FLOAT_LENGTH], xmm1
+    .lessThan8:     cmp i, length ; for (i = i; i < length; i++)
+                    je .end
 
-    add i, 4
-    jmp .iLoop
+                    vmovd  xmm0, DWORD[vec + i * FLOAT_LENGTH]
+                    vmulss xmm0, xmm1
+                    vmovd  DWORD[result + i * FLOAT_LENGTH], xmm0
 
-    .checkLast:
-    cmp i, rsi
-    je .end
+                    add i, 1
+                    jmp .lessThan8          
 
-    movd xmm1, DWORD[vec + i * FLOAT_LENGTH] ; xmm1 = | 0 | 0 | 0 | vec[i]          |
-    mulps xmm1, scalar                       ; xmm1 = | 0 | 0 | 0 | vec[i] * scalar |
-    movd DWORD[vec + i * FLOAT_LENGTH], xmm1
+    .end:           ret
 
-    add i, 1
-    jmp .checkLast
+; ------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
+; Fcomplex vector operations
+; ------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
 
-    .end:
+;-------------------------------------------------------------------------------
+; Fcomplex vector entrywise multiplication
+;
+; C signature:
+; void vectorfc_mul_asm(fcomplex *v1(rdi), fcomplex *v2(rsi), fcomplex *result(rdx), unsigned int length(rcx))
+;-------------------------------------------------------------------------------
+global vectorfc_mul_asm
+vectorfc_mul_asm:
+    %define v1 rdi
+    %define v2 rsi
+    %define result rdx
+    %define length rcx
+    %define i r8
+                    xor i, i
+                    mov rax, 3
+                    cmp rax, length
+                    jge .lessThan4
+                    sub length, 3
+
+    .iLoop:         ; for (i = 0; i < length; i+=2)
+                    vmovups ymm0, YWORD[v1 + i * FCOMPLEX_LENGTH]
+                    vmovups ymm1, YWORD[v2 + i * FCOMPLEX_LENGTH]
+                    call fcmul_4_asm wrt ..plt
+                    vmovups YWORD[result + i *FCOMPLEX_LENGTH], ymm0
+
+                    add i, 4
+                    cmp i, length
+                    jl .iLoop
+                    add length, 3
+
+    .lessThan4:     cmp i, length
+                    jge .end
+
+                    vmovlps xmm0, QWORD[v1 + i * FCOMPLEX_LENGTH]
+                    vmovlps xmm1, QWORD[v2 + i * FCOMPLEX_LENGTH]
+                    call fcmul_pair_asm wrt ..plt
+                    vmovlps QWORD[result + i * FCOMPLEX_LENGTH], xmm0
+
+                    add i, 1
+                    jmp .lessThan4
+
+    .end:           ret
+
+;-------------------------------------------------------------------------------
+; Fcomplex vector addition
+;
+; C signature:
+; void vectorfc_add_asm(fcomplex *v1(rdi), fcomplex *v2(rsi), fcomplex *result(rdx), unsigned int length(rcx))
+;-------------------------------------------------------------------------------
+global vectorfc_add_asm
+vectorfc_add_asm:
+    shl rcx, 1
+    call vectorf_add_asm
     ret
 
 ;-------------------------------------------------------------------------------
-; FLoat vector norm2
+; Fcomplex vector subtraction
 ;
 ; C signature:
-; extern float vectorf_norm_asm(float *vec(rdi), unsigned int length(rsi))
+; void vectorfc_sub_asm(fcomplex *v1(rdi), fcomplex *v2(rsi), fcomplex *result(rdx), unsigned int length(rcx))
 ;-------------------------------------------------------------------------------
-global vectorf_norm_asm
-vectorf_norm_asm:
-    ; ----------------
-    ; ------Body------
-    ; ----------------
-    %define vec rdi
-    %define sum xmm0
-    xorps sum, sum
-
-    %define length r8
-    mov length, rsi
-    sub length, 3
-
-    %define i rcx
-    mov i, 0
-
-    .iLoop: ; for (i = 0; i < length; i+=4)
-    cmp i, length
-    jge .checkLast
-
-    movups xmm1, OWORD[vec + i * FLOAT_LENGTH] ; xmm1 = | vec[i+3]          | vec[i+2]          | vec[i+1]          | vec[i]          |
-    mulps xmm1, xmm1                           ; xmm1 = | vec[i+3]^2        | vec[i+2]^2        | vec[i+1]^2        | vec[i]^2        |
-    addps xmm0, xmm1                           ; xmm0 = | sum3 + vec[i+3]^2 | sum2 + vec[i+2]^2 | sum1 + vec[i+1]^2 | sum0 + vec[i]^2 |
-
-    add i, 4
-    jmp .iLoop
-
-    .checkLast:
-    cmp i, rsi
-    je .end
-
-    movd xmm1, DWORD[vec + i * FLOAT_LENGTH] ; xmm1 = | 0    | 0    | 0    | v1[i]          |
-    mulps xmm1, xmm1                         ; xmm1 = | 0    | 0    | 0    | v1[i]^2        |
-    addps xmm0, xmm1                         ; xmm0 = | sum3 | sum2 | sum1 | sum0 + v1[i]^2 |
-
-    add i, 1
-    jmp .checkLast
-
-    .end:
-    haddps xmm0, xmm0
-    haddps xmm0, xmm0
-    sqrtps xmm0, xmm0
-
+global vectorfc_sub_asm
+vectorfc_sub_asm:
+    shl rcx, 1
+    call vectorf_sub_asm
     ret

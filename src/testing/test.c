@@ -25,11 +25,14 @@ void testpass()
     printf(BOLD_GREEN(" PASSED\n")); 
 }
 
+extern void *twiddle;
+
 int main(void)
 {
+    fcomplex_testsuite();
     vector_testuite();
     matrix_testsuite();
     fft_testsuite();
     features_testsuite();
-    dtw_testsuite();
+    free(twiddle);
 }
