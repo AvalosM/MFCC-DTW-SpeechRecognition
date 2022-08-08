@@ -2,6 +2,7 @@
 #include "transforms.h"
 #include "filters.h"
 #include "float.h"
+#include "io.h"
 
 matrixfc *frame(float *signal, unsigned int signal_length, unsigned int samplerate)
 {
@@ -33,8 +34,9 @@ matrixfc *frame(float *signal, unsigned int signal_length, unsigned int samplera
     return frames;
 }
 
-matrixf *melspectogram(float *signal, unsigned int signal_length, unsigned int samplerate)
+matrixf *melspectrogram(float *signal, unsigned int signal_length, unsigned int samplerate)
 {
+    preemphasis(signal, signal_length);
     matrixfc *frames = frame(signal, signal_length, samplerate);
     matrixf *filterbank = melfilterbank(MEL_LOWER_FREQ, samplerate / 2, samplerate, frames->cols);
 
@@ -45,6 +47,7 @@ matrixf *melspectogram(float *signal, unsigned int signal_length, unsigned int s
     }
     /* Apply FFT to each frame */
     unsigned int fft_size = frames->cols;
+    twiddle_init(fft_size);
     for (unsigned int i = 0; i < frames->rows; i++) {
         fcomplex *frames_row_i = matrixfc_at(frames, i, 0);
         fft(frames_row_i, workspace, fft_size);
@@ -78,7 +81,7 @@ matrixf *melspectogram(float *signal, unsigned int signal_length, unsigned int s
 
 matrixf *mfcc(float *signal, unsigned int signal_length, unsigned int samplerate)
 {
-    matrixf *spectogram = melspectogram(signal, signal_length, samplerate);
+    matrixf *spectrogram = melspectrogram(signal, signal_length, samplerate);
 
     /* Initialize lifter */
     float *lifter = malloc(MEL_FILTER_NUM * sizeof(float));
@@ -87,17 +90,17 @@ matrixf *mfcc(float *signal, unsigned int signal_length, unsigned int samplerate
     }
 
     /* Apply FCT to each coefficient vector */
-    matrixf *mfcc_matrix = matrixf_new(spectogram->rows, MFCC_FEATURE_NUM, ROW_MAJOR);
-    for (unsigned int i = 0; i < spectogram->rows; i++) {
-        float *spectogram_row_i = matrixf_at(spectogram, i, 0);
-        fct(spectogram_row_i, spectogram->cols);
+    matrixf *mfcc_matrix = matrixf_new(spectrogram->rows, MFCC_FEATURE_NUM, ROW_MAJOR);
+    for (unsigned int i = 0; i < spectrogram->rows; i++) {
+        float *spectrogram_row_i = matrixf_at(spectrogram, i, 0);
+        fct(spectrogram_row_i, spectrogram->cols);
         /* Copy values */
-        for (unsigned int j = 0; j < MFCC_FEATURE_NUM; j++) {
-            *matrixf_at(mfcc_matrix, i, j) = spectogram_row_i[j] * lifter[j];
+        for (unsigned int j = MFCC_FIRST_FEATURE; j < MFCC_FEATURE_NUM + MFCC_FIRST_FEATURE; j++) {
+            *matrixf_at(mfcc_matrix, i, j - MFCC_FIRST_FEATURE) = spectrogram_row_i[j] * lifter[j];
         }
     }
 
     free(lifter);
-    matrixf_free(spectogram);
+    matrixf_free(spectrogram);
     return mfcc_matrix;
 }

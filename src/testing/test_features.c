@@ -18,24 +18,24 @@ void features_filterbank()
     testpass();
 }
 
-void features_spectogram()
+void features_spectrogram()
 {
-    testinit("spectogram");
+    testinit("spectrogram");
 
-    matrixf *four0_spectogram = melspectogram(four0, four0_info.frames, four0_info.samplerate);
-    matrixf *four1_spectogram = melspectogram(four1, four1_info.frames, four1_info.samplerate);
-    matrixf *two0_spectogram = melspectogram(two0, two0_info.frames, two0_info.samplerate);
-    matrixf *two1_spectogram = melspectogram(two1, two1_info.frames, two1_info.samplerate);
+    matrixf *four0_spectrogram = melspectrogram(four0, four0_info.frames, four0_info.samplerate);
+    matrixf *four1_spectrogram = melspectrogram(four1, four1_info.frames, four1_info.samplerate);
+    matrixf *two0_spectrogram = melspectrogram(two0, two0_info.frames, two0_info.samplerate);
+    matrixf *two1_spectrogram = melspectrogram(two1, two1_info.frames, two1_info.samplerate);
 
-    savematrixf(TEST_RES_DIR("four0_spectogram.csv"), four0_spectogram);
-    savematrixf(TEST_RES_DIR("four1_spectogram.csv"), four1_spectogram);
-    savematrixf(TEST_RES_DIR("two0_spectogram.csv"), two0_spectogram);
-    savematrixf(TEST_RES_DIR("two1_spectogram.csv"), two1_spectogram);
+    savematrixf(TEST_RES_DIR("four0_spectrogram.csv"), four0_spectrogram);
+    savematrixf(TEST_RES_DIR("four1_spectrogram.csv"), four1_spectrogram);
+    savematrixf(TEST_RES_DIR("two0_spectrogram.csv"), two0_spectrogram);
+    savematrixf(TEST_RES_DIR("two1_spectrogram.csv"), two1_spectrogram);
 
-    matrixf_free(four0_spectogram);
-    matrixf_free(four1_spectogram);
-    matrixf_free(two0_spectogram);
-    matrixf_free(two1_spectogram);
+    matrixf_free(four0_spectrogram);
+    matrixf_free(four1_spectrogram);
+    matrixf_free(two0_spectrogram);
+    matrixf_free(two1_spectrogram);
 
     testpass();
 }
@@ -73,11 +73,11 @@ void features_testsuite()
 
     /* Run tests */
     features_filterbank();
-    features_spectogram();
+    features_spectrogram();
     features_mfcc();
     
-    // free(four0);
-    // free(four1);
-    // free(two0);
-    // free(two1);
+    free(four0);
+    free(four1);
+    free(two0);
+    free(two1);
 }

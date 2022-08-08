@@ -11,14 +11,14 @@
 #define MEL_LOWER_FREQ 64
 
 #define MFCC_FEATURE_NUM 12
-#define MFCC_FIRST_FEATURE 2
+#define MFCC_FIRST_FEATURE 1
 #define CEP_LIFTER 10
 
 #define FEATURE_NUM 12
 
 matrixfc *frame(float *signal, unsigned int signal_length, unsigned int samplerate);
 
-matrixf *melspectogram(float *signal, unsigned int signal_length, unsigned int samplerate);
+matrixf *melspectrogram(float *signal, unsigned int signal_length, unsigned int samplerate);
 
 matrixf *mfcc(float *signal, unsigned int signal_length, unsigned int samplerate);
 
