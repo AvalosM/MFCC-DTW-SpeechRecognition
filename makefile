@@ -35,7 +35,7 @@ $(BUILD_DIR)/%.asm.o: $(SRC_DIR)/%.asm
 # Compile Dynamic Library
 $(LIB): $(C_OBJS) $(ASM_OBJS)
 	@mkdir -p $(dir $@)	
-	$(CC) $(CFLAGS) -fPIC -shared $^ $(LIBS) -o $@
+	$(CC) $(CFLAGS) -shared $^ $(LIBS) -o $@
 
 # Test link
 $(TEST): $(C_TEST_SRCS) $(LIB)
