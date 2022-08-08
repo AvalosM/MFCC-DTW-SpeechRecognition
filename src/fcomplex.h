@@ -18,4 +18,6 @@ fcomplex fcsub(fcomplex x, fcomplex y);
 
 float fcabs(fcomplex x);
 
+int fcequ(fcomplex x, fcomplex y, float epsilon);
+
 #endif /* __FCOMPLEX_H__ */

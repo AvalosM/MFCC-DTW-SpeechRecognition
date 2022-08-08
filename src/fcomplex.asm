@@ -18,6 +18,22 @@ fcmul_pair_asm:
 
     movaps xmm0, xmm2  
     ret
+    
+; Multiply four pairs of complex numbers
+; fcomplex fcmul_4_asm(fcomplex[4]x(ymm0), fcomplex[4]y(ymm1))
+global fcmul_4_asm
+fcmul_4_asm:
+    vmovsldup ymm2, ymm0 
+    vmulps ymm2, ymm1    
+
+    vshufps ymm1, ymm1, 0xb1
+    vmovshdup ymm3, ymm0    
+    vmulps ymm3, ymm1       
+
+    vaddsubps ymm2, ymm3
+
+    vmovaps ymm0, ymm2  
+    ret
 
 global fcabs_pair_asm
 ; Absolute value of a pair of complex numbers

@@ -19,3 +19,9 @@ float fcabs(fcomplex x)
 {
     return (float)sqrtf(powf(x.real, 2) + powf(x.imag, 2));
 }
+
+int fcequ(fcomplex x, fcomplex y, float epsilon)
+{
+    fcomplex sub = fcsub(x, y);
+    return sub.real < epsilon && sub.imag < epsilon;
+}
