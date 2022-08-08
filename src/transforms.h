@@ -9,6 +9,9 @@
 #define PI 3.14159265358979323846
 #define TWIDDLE_TABLE_SIZE 1024
 
+
+extern fcomplex *twiddle;
+
 /**
  * @brief Init twiddle factor table
  * 

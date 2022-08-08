@@ -7,6 +7,7 @@ void fft_allzero()
     testinit("fft_allzero");
 
     unsigned int len = 16;
+    twiddle_init(len);
     fcomplex *signal    = (fcomplex*)calloc(len, sizeof(fcomplex));
     fcomplex *workspace = (fcomplex*)calloc(len, sizeof(fcomplex));
 
@@ -18,7 +19,6 @@ void fft_allzero()
     }
     free(signal);
     free(workspace);
-
     testpass();
 }
 
@@ -31,6 +31,7 @@ void fft_linearity()
      * FFT(a1 x1[n] + a2 x2[n]) = a1 FFT(x1[n]) + a2 FFT(x2[n]) must hold
      */
     unsigned int len = 16;
+    twiddle_init(len);
     fcomplex *x1 = (fcomplex*)calloc(len, sizeof(fcomplex));
     fcomplex *x2 = (fcomplex*)calloc(len, sizeof(fcomplex));
     fcomplex a1 = { 3, 0 };
@@ -75,6 +76,7 @@ void fft_sinewave()
     testinit("fft_sinewave");
 
     unsigned int len = 128;
+    twiddle_init(len);
     unsigned int samplerate = len;
     fcomplex *sinewave  = calloc(len, sizeof(fcomplex));
     fcomplex *workspace = malloc(len * sizeof(fcomplex));
@@ -108,6 +110,7 @@ void fft_wavesum()
 
     unsigned int len = 128;
     unsigned int samplerate = len;
+    twiddle_init(len);
     fcomplex *signal = (fcomplex*)calloc(len, sizeof(fcomplex));
     fcomplex *workspace = malloc(len * sizeof(fcomplex));
 
@@ -147,7 +150,6 @@ void fft_wavesum()
 void fft_testsuite()
 {
     suiteinit("FFT");
-    twiddle_init();
     fft_allzero();
     fft_linearity();
     fft_sinewave();
