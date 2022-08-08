@@ -59,6 +59,9 @@ data/
 build/
 res/
 
+# Python
+__pycache__
+
+
 # Executables
-speechr
 test
