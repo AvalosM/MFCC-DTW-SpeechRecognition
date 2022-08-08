@@ -86,61 +86,31 @@ void matrixf_mul_r(matrixf *m1, matrixf *m2)
     if (m1->rows != m2->rows || m1->cols != m2->cols) {
         exit(-1);
     }
-    for (unsigned int i = 0; i < m1->rows; i++) {
-        float *m1_row_i = matrixf_at(m1, i, 0);
-        float *m2_row_i = matrixf_at(m2, i, 0);
+    #ifdef __MATRIX_SSE__
 
-        #ifdef __MATRIX_SSE__
+    vectorf_mul_asm(m1->data, m2->data, m1->data, m1->cols * m1->rows);
 
-        vectorf_mul_r_asm(m1_row_i, m2_row_i, m1->cols);
+    #else
 
-        #else
-
-        for (unsigned int j = 0; j < m1->cols; j++) {
-            m1_row_i[j] = m1_row_i[j] * m2_row_i[j];
-        }
-
-        #endif
+    for (unsigned int i = 0; i < m1->cols * m1->rows; i++) {
+        m1->data[i] = m1->data[i] * m2->data[i];
     }
+
+    #endif
 }
 
 void matrixf_smul_r(matrixf *mat, float scalar)
 {
-    for (unsigned int i = 0; i < mat->rows; i++) {
-        float *mat_row_i = matrixf_at(mat, i, 0);
+    #ifdef __MATRIX_SSE__
 
-        #ifdef __MATRIX_SSE__
+    vectorf_smul_asm(mat->data, scalar, mat->data, mat->cols * mat->rows);
 
-        vectorf_smul_r_asm(mat_row_i, scalar, mat->cols);
-
-        #else
-
-        for (unsigned int j = 0; j < mat->cols; j++) {
-            mat_row_i[j] = mat_row_i[j] * scalar;
-        }
-
-        #endif
+    #else
+    for (unsigned int i = 0; i < mat->cols * mat->rows; i++) {
+        mat->data[j] *= scalar;
     }
-}
-
-float vectorf_dist(float *v1, float *v2, unsigned int length)
-{
-    float sum = 0;
-    for (unsigned int i = 0; i < length; i++) {
-        sum += powf(v1[i] - v2[i], 2);
-    }
-    return sqrtf(sum);
-}
-
-void matrixf_print(matrixf *mat)
-{
-    for (unsigned int i = 0; i < mat->rows; i++) {
-        printf("|");
-        for (unsigned int j = 0; j < mat->cols; j++) {
-            printf(" %.0f ", *matrixf_at(mat, i, j));
-        }
-        printf("|\n");
-    }
+    
+    #endif
 }
 
 /**
@@ -191,7 +161,7 @@ void matrixfc_reshape(matrixfc *mat, unsigned int rows, unsigned int cols)
         }
     } else {
         for (unsigned int j = 0; j < cols; j++) {
-            fcomplex *col_i = matrixfc_at(mat, j, 0);
+            fcomplex *col_i = matrixfc_at(mat, 0, j);
             memmove(mat->data + (j * rows), col_i, sizeof(fcomplex) * rows);
         }
     }
@@ -215,16 +185,4 @@ matrixf *matrixfc_abs(matrixfc *mat)
         }
     }
     return res;
-}
-
-void matrixfc_print(matrixfc *mat)
-{
-    for (unsigned int i = 0; i < mat->rows; i++) {
-        printf("|");
-        for (unsigned int j = 0; j < mat->cols; j++) {
-            fcomplex curr_entry = *matrixfc_at(mat, i, j);
-            printf("(%.0f,%.0f)", curr_entry.real, curr_entry.imag);
-        }
-        printf("|\n");
-    }
 }

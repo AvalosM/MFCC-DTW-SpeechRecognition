@@ -1,5 +1,6 @@
 #include "test.h"
 #include "../matrix.h"
+#include <string.h>
 
 /**
  * ----------------------------------------------
@@ -16,8 +17,8 @@ void matrix_matrixf_dot_fast()
     matrixf *m2 = matrixf_new(3, 3, COL_MAJOR);
     free(m2->data);
     /**
-     * [1, 1, 1] * [1, 2, 3] = [ 3,  6,  9]
-     * [2, 2, 2]   [1, 2, 3]   [ 6, 12, 18]
+     * [1, 1, 1]   [1, 2, 3]   [ 3,  6,  9]
+     * [2, 2, 2] * [1, 2, 3] = [ 6, 12, 18]
      * [3, 3, 3]   [1, 2, 3]   [ 9, 18, 27]
      */
     float arr1[9] = {1, 1, 1,
@@ -53,4 +54,5 @@ void matrix_testsuite()
 {
     suiteinit("Matrix");
     matrix_matrixf_dot_fast();
+    // matrix_matrixfc_reshape();
 }
