@@ -10,7 +10,7 @@ void features_filterbank()
 {
     testinit("filterbank");
 
-    matrixf *filterbank = melfilterbank(0, 8000, 16000, 512);
+    matrixf *filterbank = mel_filterbank(0, 8000, 16000, 512);
     savematrixf(TEST_RES_DIR("filterbank.csv"), filterbank);
 
     matrixf_free(filterbank);
@@ -22,10 +22,10 @@ void features_spectrogram()
 {
     testinit("spectrogram");
 
-    matrixf *four0_spectrogram = melspectrogram(four0, four0_info.frames, four0_info.samplerate);
-    matrixf *four1_spectrogram = melspectrogram(four1, four1_info.frames, four1_info.samplerate);
-    matrixf *two0_spectrogram = melspectrogram(two0, two0_info.frames, two0_info.samplerate);
-    matrixf *two1_spectrogram = melspectrogram(two1, two1_info.frames, two1_info.samplerate);
+    matrixf *four0_spectrogram = mel_spectrogram(four0, four0_info.frames, four0_info.samplerate);
+    matrixf *four1_spectrogram = mel_spectrogram(four1, four1_info.frames, four1_info.samplerate);
+    matrixf *two0_spectrogram = mel_spectrogram(two0, two0_info.frames, two0_info.samplerate);
+    matrixf *two1_spectrogram = mel_spectrogram(two1, two1_info.frames, two1_info.samplerate);
 
     savematrixf(TEST_RES_DIR("four0_spectrogram.csv"), four0_spectrogram);
     savematrixf(TEST_RES_DIR("four1_spectrogram.csv"), four1_spectrogram);

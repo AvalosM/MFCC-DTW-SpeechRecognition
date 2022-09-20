@@ -43,7 +43,6 @@ void testfail();
 void testpass();
 
 /* Test suites */
-void fcomplex_testsuite();
 void vector_testuite();
 void matrix_testsuite();
 void fft_testsuite();

@@ -7,11 +7,11 @@ void fft_allzero()
     testinit("fft_allzero");
 
     unsigned int len = 16;
-    twiddle_init(len);
     fcomplex *signal    = (fcomplex*)calloc(len, sizeof(fcomplex));
     fcomplex *workspace = (fcomplex*)calloc(len, sizeof(fcomplex));
 
-    fft(signal, workspace, len);
+    fcomplex *twiddle = twiddle_factors(len);
+    fft(signal, workspace, twiddle, len);
 
     for (unsigned int i = 0; i < len; i++) {
         ASSERT_EQ(signal[i].real, 0);
@@ -19,6 +19,7 @@ void fft_allzero()
     }
     free(signal);
     free(workspace);
+    free(twiddle);
     testpass();
 }
 
@@ -31,7 +32,6 @@ void fft_linearity()
      * FFT(a1 x1[n] + a2 x2[n]) = a1 FFT(x1[n]) + a2 FFT(x2[n]) must hold
      */
     unsigned int len = 16;
-    twiddle_init(len);
     fcomplex *x1 = (fcomplex*)calloc(len, sizeof(fcomplex));
     fcomplex *x2 = (fcomplex*)calloc(len, sizeof(fcomplex));
     fcomplex a1 = { 3, 0 };
@@ -49,10 +49,10 @@ void fft_linearity()
     }
 
     fcomplex *workspace = (fcomplex*)calloc(len, sizeof(fcomplex));
-
-    fft(y, workspace, len); /* FFT(a1 x1[n] + a2 x2[n]) */
-    fft(x1, workspace, len);
-    fft(x2, workspace, len);
+    fcomplex *twiddle = twiddle_factors(len);
+    fft(y, workspace, twiddle, len); /* FFT(a1 x1[n] + a2 x2[n]) */
+    fft(x1, workspace, twiddle, len);
+    fft(x2, workspace, twiddle, len);
     for (unsigned int i = 0; i < len; i++) {
         x1[i] = fcadd(fcmul(a1, x1[i]), fcmul(a2, x2[i])); /* a1 FFT(x1[n]) + a2 FFT(x2[n]) */
     }
@@ -67,6 +67,7 @@ void fft_linearity()
     free(x2);
     free(y);
     free(workspace);
+    free(twiddle);
 
     testpass();
 }
@@ -76,7 +77,6 @@ void fft_sinewave()
     testinit("fft_sinewave");
 
     unsigned int len = 128;
-    twiddle_init(len);
     unsigned int samplerate = len;
     fcomplex *sinewave  = calloc(len, sizeof(fcomplex));
     fcomplex *workspace = malloc(len * sizeof(fcomplex));
@@ -86,8 +86,8 @@ void fft_sinewave()
         sinewave[i].real = sinf((2 * PI * i) / (samplerate / 4));
     }
     savesignalc(TEST_RES_DIR("fft_sinewave.csv"), sinewave, len);
-
-    fft(sinewave, workspace, len);
+    fcomplex *twiddle = twiddle_factors(len);
+    fft(sinewave, workspace, twiddle, len);
     savesignalc(TEST_RES_DIR("fft_fftsinewave.csv"), sinewave, len);
 
     /* Bin corresponding with periodogram peak should be found at 4hz(4th bin) */
@@ -100,7 +100,7 @@ void fft_sinewave()
 
     free(sinewave);
     free(workspace);
-
+    free(twiddle);
     testpass();
 }
 
@@ -110,7 +110,6 @@ void fft_wavesum()
 
     unsigned int len = 128;
     unsigned int samplerate = len;
-    twiddle_init(len);
     fcomplex *signal = (fcomplex*)calloc(len, sizeof(fcomplex));
     fcomplex *workspace = malloc(len * sizeof(fcomplex));
 
@@ -120,7 +119,8 @@ void fft_wavesum()
     }
     savesignalc(TEST_RES_DIR("fft_wavesum.csv"), signal, len);
 
-    fft(signal, workspace, len);
+    fcomplex *twiddle = twiddle_factors(len);
+    fft(signal, workspace, twiddle, len);
     savesignalc(TEST_RES_DIR("fft_fftwavesum.csv"), signal, len);
 
     /* Bin corresponding with periodogram peaks should be found at 4hz(4th bin) and 8hz(8th bin)*/
@@ -142,6 +142,7 @@ void fft_wavesum()
 
     free(signal);
     free(workspace);
+    free(twiddle);
 
     testpass();
 }
