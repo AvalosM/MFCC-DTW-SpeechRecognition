@@ -21,7 +21,7 @@ void preemphasis(float *signal, unsigned int signal_length);
  * @param length
  * @return float* 
  */
-float *hammingwindow(unsigned int length);
+float *hamming_window(unsigned int length);
 
 /**
  * @brief Initialize mel-filterbank
@@ -35,7 +35,8 @@ float *hammingwindow(unsigned int length);
  * @param fft_size 
  * @return float* 
  */
-matrixf *melfilterbank(float lower_freq, float upper_freq, unsigned int samplerate, unsigned int fft_size);
+matrixf *mel_filterbank(float lower_freq, float upper_freq, unsigned int samplerate, unsigned int fft_size);
 
+float *cepstral_lifter(unsigned int liftering_coefficient, unsigned int mel_filter_count);
 
 #endif /* __FILTERS_H__ */

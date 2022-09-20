@@ -13,12 +13,13 @@ void preemphasis(float *signal, unsigned int signal_length)
 
 /* https://arxiv.org/abs/1003.4083 */
 /* Hann window with a_0 ~= 0.54 */
-float *hammingwindow(unsigned int length)
+float *hamming_window(unsigned int length)
 {
     float *window = malloc(length * sizeof(float));
     for (unsigned int i = 0; i < length; i++) {
         window[i] = 0.54 - 0.46 * cos((2 * PI * i)/length);
     }
+    
     return window;
 }
 
@@ -35,7 +36,7 @@ float mel2hz(float mel)
     return 700 * (expf(mel / 1125) - 1);
 }
 
-matrixf *melfilterbank(float lower_freq, float upper_freq, unsigned int samplerate, unsigned int fft_size)
+matrixf *mel_filterbank(float lower_freq, float upper_freq, unsigned int samplerate, unsigned int fft_size)
 {
     /* Convert lower and upper bounds to Mel scale */
     float lower_freq_mel = hz2mel(lower_freq);
@@ -73,4 +74,14 @@ matrixf *melfilterbank(float lower_freq, float upper_freq, unsigned int samplera
 
     free(fft_bins);
     return filterbank;
+}
+
+float *cepstral_lifter(unsigned int liftering_coefficient, unsigned int mel_filter_count)
+{
+    float *lifter = malloc(mel_filter_count * sizeof(float));
+    for (unsigned int i = 0; i < mel_filter_count; i++) {
+        lifter[i] = 1.0 + (liftering_coefficient / 2.0) * sin(PI * i / liftering_coefficient);
+    }
+
+    return lifter;
 }
