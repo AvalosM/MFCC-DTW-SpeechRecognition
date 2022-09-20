@@ -55,7 +55,7 @@ dkms.conf
 *.valgrind
 
 # Directories
-data/
+data/speech_commands
 build/
 res/
 
