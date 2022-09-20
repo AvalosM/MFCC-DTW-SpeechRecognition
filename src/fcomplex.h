@@ -1,7 +1,6 @@
 #ifndef __FCOMPLEX_H__
 #define __FCOMPLEX_H__
 
-#include "config.h"
 #include <math.h>
 
 typedef struct fcomplex 
