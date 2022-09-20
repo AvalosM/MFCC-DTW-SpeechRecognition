@@ -13,7 +13,7 @@ void vector_vectorf_dot_asm()
     float expected = 0;
     for (unsigned int i = 0; i < 10; i++) {
         float result = vectorf_dot_asm(v1, v2, i);
-        ASSERT(result - expected < EPSILON);
+        ASSERT_EQ(result, expected);
         expected += i + 1;
     }
 
@@ -146,6 +146,41 @@ void vector_vectorfc_sub_asm()
     testpass();
 }
 
+void vector_vectorf_to_fc_asm()
+{
+    testinit("vectorfc_to_f_asm");
+
+    float vec[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    fcomplex result[10];
+    fcomplex expected[10] = {{1,0}, {2,0}, {3,0}, {4,0}, {5,0}, {6,0}, {7,0}, {8,0}, {9,0}, {10,0}};
+
+    for (unsigned int i = 0; i <= 10; i++) {
+        vectorf_to_fc_asm(vec, result, i);
+        for (unsigned int j = 0; j < i; j++) {
+            ASSERT(fcequ(result[j], expected[j], EPSILON));
+        }
+    }
+
+    testpass();
+}
+
+void vector_vectorfc_abs()
+{
+    testinit("vectorfc_abs");
+    fcomplex vec[6] = {{1,1}, {1,1}, {1,1}, {1,1}, {1,1}, {1,1}};
+    float result[6];
+    float expected = sqrtf(2);
+
+    for (unsigned int i = 0; i <= 6; i++) {
+        vectorfc_abs(vec, result, i);
+        for (unsigned int j = 0; j < i; j++) {
+            ASSERT_EQ(result[j], expected);
+        }
+    }
+
+    testpass();
+}
+
 void vector_testuite()
 {
     suiteinit("Vector");
@@ -157,4 +192,6 @@ void vector_testuite()
     vector_vectorfc_mul_asm();
     vector_vectorfc_add_asm();
     vector_vectorfc_sub_asm();
+    vector_vectorf_to_fc_asm();
+    vector_vectorfc_abs();
 }

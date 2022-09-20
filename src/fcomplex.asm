@@ -43,3 +43,15 @@ fcabs_pair_asm:
     mulps xmm0, xmm0  ; xmm0 = | x1.im^2            | x1.re^2           | x0.im^2           | x0.re^2           |
     haddps xmm0, xmm0 ; xmm0 = | ...                | ...               | x1.im^2 + x1.re^2 | x0.im^2 + x0.re^2 |
     sqrtps xmm0, xmm0 ; xmm0 = | ...                | ...               | abs(x1)           | abs(x0)           |
+    ret
+
+global fcabs_4_asm
+; Absolute value of four complex numbers
+; float fcabs_pair_asm(fcomplex[4]x(ymm0))
+fcabs_4_asm:
+    vmulps ymm0, ymm0
+    vhaddps ymm0, ymm0
+    vsqrtps ymm0, ymm0
+    vextractf128 xmm1, ymm0, 0x1
+    vshufps xmm0, xmm1, 0x44
+    ret
