@@ -1,4 +1,5 @@
 from ctypes import *
+from numpy.ctypeslib import *
 
 c_float_p = POINTER(c_float)
 
@@ -37,6 +38,12 @@ def load_speechrlib(path_to_lib):
     speechr = CDLL(path_to_lib)
 
     # ---------------------------------------------------------------
+    # I/O
+    # ---------------------------------------------------------------
+    # void savematrixf(char *file_path, matrixf *mat)
+    speechr.savematrixf.argtypes = [c_char_p, c_matrixf_p]
+
+    # ---------------------------------------------------------------
     # Transforms
     # ---------------------------------------------------------------
     # void fft(fcomplex *x, fcomplex *y, unsigned int n);
@@ -61,7 +68,18 @@ def load_speechrlib(path_to_lib):
     speechr.mfcc.argtypes = [c_float_p, c_uint, c_uint]
     speechr.mfcc.restype  = c_matrixf_p
 
-    # void savematrixf(char *file_path, matrixf *mat);
-    speechr.savematrixf.argtypes = [c_char_p, c_matrixf_p]
+    # ---------------------------------------------------------------
+    # DTW
+    # ---------------------------------------------------------------
+    # float dtw(matrixf *x, matrixf *y)
+    speechr.dtw.argtypes = [c_matrixf_p, c_matrixf_p]
+    speechr.dtw.restype  = c_float 
 
     return speechr
+
+# ---------------------------------------------------------------
+# UTILS
+# ---------------------------------------------------------------
+def matrixf_as_array(matrixf_p):
+    matrixf = matrixf_p.contents
+    return as_array(matrixf.data, [matrixf.rows, matrixf.cols]).reshape(matrixf.rows, matrixf.cols)
