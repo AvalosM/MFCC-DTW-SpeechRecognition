@@ -9,6 +9,8 @@ void vectorf_mul(float *v1, float *v2, float *result, unsigned int length);
 
 void vectorf_smul(float *vec, float scalar, float *result, unsigned int length);
 
+void vectorf_sub(float *v1, float *v2, float *result, unsigned int length);
+
 void vectorf_to_fc(float *vec, fcomplex *result, unsigned int length);
 
 void vectorfc_mul(fcomplex *v1, fcomplex *v2, fcomplex *result, unsigned int length);

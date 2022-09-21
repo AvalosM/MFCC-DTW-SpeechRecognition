@@ -48,6 +48,21 @@ void vectorf_smul(float *vec, float scalar, float *result, unsigned int length)
     #endif
 }
 
+void vectorf_sub(float *v1, float *v2, float *result, unsigned int length)
+{
+    #ifdef __VECTOR_AVX__
+
+    vectorf_sub_asm(v1, v2, result, length);
+
+    #else
+
+    for (unsigned int i = 0; i < length; i++) {
+        result[i] = v1[i] - v2[i];
+    }
+
+    #endif
+}
+
 void vectorf_to_fc(float *vec, fcomplex *result, unsigned int length)
 {
     #ifdef __VECTOR_AVX__

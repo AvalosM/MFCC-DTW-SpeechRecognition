@@ -21,6 +21,8 @@ matrixf *matrixf_new(unsigned int n_rows, unsigned int n_cols, int order);
 
 void matrixf_free(matrixf *mat);
 
+void matrixf_set(matrixf *mat, float value);
+
 float *matrixf_at(matrixf *mat, unsigned int row, unsigned int col);
 
 /**

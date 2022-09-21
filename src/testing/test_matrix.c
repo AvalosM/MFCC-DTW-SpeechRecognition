@@ -54,5 +54,4 @@ void matrix_testsuite()
 {
     suiteinit("Matrix");
     matrix_matrixf_dot_fast();
-    // matrix_matrixfc_reshape();
 }
