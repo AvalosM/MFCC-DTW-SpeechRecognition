@@ -2,7 +2,7 @@
 #include "transforms.h"
 #include "filters.h"
 #include "float.h"
-#include "io.h"
+#include "vector.h"
 
 matrixfc *frame(float *signal, unsigned int signal_length, unsigned int samplerate)
 {
@@ -19,48 +19,52 @@ matrixfc *frame(float *signal, unsigned int signal_length, unsigned int samplera
 
     matrixfc *frames = matrixfc_new(frame_count, frame_length_padded, ROW_MAJOR);
 
-    /* Hamming window */
-    float *window = hammingwindow(frame_length);
+    /* Apply Hamming window to each frame and store in frame matrix*/
+    float *window = hamming_window(frame_length);
+    float *curr_frame = malloc(frame_length * sizeof(float));
+    if (!curr_frame) exit(-1);
 
-    /* Copy frame values from signal and window them */
     for (unsigned int f_num = 0; f_num < frame_count; f_num++) {
-        fcomplex *curr_frame = matrixfc_at(frames, f_num, 0);
-        for (unsigned int i = 0; i < frame_length; i++) {
-            curr_frame[i].real = signal[i + f_num * frame_step] * window[i];
-        }
+        vectorf_mul(window, signal + f_num * frame_step, curr_frame, frame_length);
+        /* Store windowed frame in row f_num of frames matrix */
+        vectorf_to_fc(curr_frame, matrixfc_at(frames, f_num, 0), frame_length);
     }
 
+    /* Cleanup */
     free(window);
+    free(curr_frame);
+    
     return frames;
 }
 
-matrixf *melspectrogram(float *signal, unsigned int signal_length, unsigned int samplerate)
+matrixf *mel_spectrogram(float *signal, unsigned int signal_length, unsigned int samplerate)
 {
-    preemphasis(signal, signal_length);
+    /* Frame and window signal */
     matrixfc *frames = frame(signal, signal_length, samplerate);
-    matrixf *filterbank = melfilterbank(MEL_LOWER_FREQ, samplerate / 2, samplerate, frames->cols);
 
     /* Allocate workspace to perform FFTs */
     fcomplex *workspace = malloc(frames->cols * sizeof(fcomplex));
-    if (!workspace) {
-        exit(-1);
-    }
-    /* Apply FFT to each frame */
-    unsigned int fft_size = frames->cols;
-    twiddle_init(fft_size);
-    for (unsigned int i = 0; i < frames->rows; i++) {
-        fcomplex *frames_row_i = matrixfc_at(frames, i, 0);
-        fft(frames_row_i, workspace, fft_size);
-    }
-    /* Keep positive half + 1 of each FFT */
-    matrixfc_reshape(frames, frames->rows, fft_size / 2 + 1);
+    if (!workspace) exit(-1);
 
-    /* Periodogram estimate of the power spectrum */
-    matrixf *power_spectrums = matrixfc_abs(frames);      /* |FFT(frame_i)| */
-    matrixf_mul_r(power_spectrums, power_spectrums);      /* |FFT(frame_i)|^2 */
-    matrixf_smul_r(power_spectrums, (float)1 / fft_size); /* |FFT(frame_i)|^2 / N|*/
+    /* Precalculate twiddle factors */
+    fcomplex *twiddle = twiddle_factors(frames->cols);
 
-    /* Multiply each power spectrum by filterbank to get spectogram */
+    /* Apply fft to each frame and keep the absolute values of the positive half + 1 */
+    matrixf *power_spectrums = matrixf_new(frames->rows, frames->cols / 2 + 1, ROW_MAJOR);
+    for (unsigned int f_num = 0; f_num < frames->rows; f_num++) {
+        fcomplex *curr_frame = matrixfc_at(frames, f_num, 0);
+        fft(curr_frame, workspace, twiddle, frames->cols);
+        vectorfc_abs(curr_frame, matrixf_at(power_spectrums, f_num, 0), power_spectrums->cols);
+    }
+
+    /* Compute the periodogram based power spectral estimate */
+    matrixf_mul(power_spectrums, power_spectrums, power_spectrums);
+    matrixf_smul(power_spectrums, 1.0/frames->cols, power_spectrums);
+
+    /* Init filterbank */
+    matrixf *filterbank = mel_filterbank(MEL_LOWER_FREQ, samplerate / 2, samplerate, frames->cols);
+
+    /* Multiply each power spectrum by filterbank to get spectrogram */
     matrixf *spectrogram = matrixf_dot_fast(power_spectrums, filterbank, ROW_MAJOR);
 
     /* Take the log of each value */
@@ -71,36 +75,34 @@ matrixf *melspectrogram(float *signal, unsigned int signal_length, unsigned int 
     }
 
     /* Cleanup */
-    free(workspace);
     matrixfc_free(frames);
-    matrixf_free(filterbank);
+    free(workspace);
     matrixf_free(power_spectrums);
+    matrixf_free(filterbank);
+    free(twiddle);
 
     return spectrogram;
 }
 
 matrixf *mfcc(float *signal, unsigned int signal_length, unsigned int samplerate)
 {
-    matrixf *spectrogram = melspectrogram(signal, signal_length, samplerate);
+    preemphasis(signal, signal_length);
+    matrixf *spectrogram = mel_spectrogram(signal, signal_length, samplerate);
 
-    /* Initialize lifter */
-    float *lifter = malloc(MEL_FILTER_NUM * sizeof(float));
-    for (unsigned int i = 0; i < MEL_FILTER_NUM; i++) {
-        lifter[i] = 1 + (CEP_LIFTER / 2) * sinf(PI * i / CEP_LIFTER);
-    }
+    /* Initialize cepstral lifter */
+    float *lifter = cepstral_lifter(CEP_LIFTER, MEL_FILTER_NUM);
 
     /* Apply FCT to each coefficient vector */
     matrixf *mfcc_matrix = matrixf_new(spectrogram->rows, MFCC_FEATURE_NUM, ROW_MAJOR);
     for (unsigned int i = 0; i < spectrogram->rows; i++) {
         float *spectrogram_row_i = matrixf_at(spectrogram, i, 0);
         fct(spectrogram_row_i, spectrogram->cols);
-        /* Copy values */
-        for (unsigned int j = MFCC_FIRST_FEATURE; j < MFCC_FEATURE_NUM + MFCC_FIRST_FEATURE; j++) {
-            *matrixf_at(mfcc_matrix, i, j - MFCC_FIRST_FEATURE) = spectrogram_row_i[j] * lifter[j];
-        }
+        /* Apply lifter and store in mfcc_matrix */
+        vectorf_mul(spectrogram_row_i + MFCC_FIRST_FEATURE, lifter, matrixf_at(mfcc_matrix, i, 0), MFCC_FEATURE_NUM);
     }
 
-    free(lifter);
     matrixf_free(spectrogram);
+    free(lifter);
+    
     return mfcc_matrix;
 }
