@@ -78,5 +78,4 @@ c_msg:
 	@echo $(CC) flags are: $(CFLAGS)
 
 as_msg:
-	@echo Assembling...
 	@echo $(AS) flags are: $(ASFLAGS)
